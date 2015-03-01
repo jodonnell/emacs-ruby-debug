@@ -14,11 +14,10 @@
 
 (defun ruby-debug-next-line()
   (interactive)
-  (next-line)
-  (ruby-debug-move-current-line)
   (set-buffer "server")
-  (insert "next")
-  (comint-send-input))
+  (erase-buffer)
+  (process-send-string (get-buffer-process "server") "next\n"))
+
 
 (defun ruby-debug-add-breakpoint()
   (interactive)
@@ -63,3 +62,26 @@
         (setq x (+ 1 x))
         (setq symbol (make-symbol (concat "ruby-debug-breakpoint-mark" (number-to-string x))))))
     (ruby-debug-add-fringe-breakpoint symbol)))
+
+
+
+(defun ruby-debug--get-current-line-from-output (output)
+  (if (string-match "=> +\\([0-9]+\\):" output)
+      (string-to-number (match-string 1 output))))
+
+(defun ruby-debug--get-current-file-from-output (output)
+  (if (string-match "\n\[[0-9]+, [0-9]+\] in \\(.*\\)" output)
+      (match-string 1 output)))
+
+(defun ruby-debug--process-filter(process output)
+  (set-buffer "server")
+  (insert output)
+  (let ((current-line (ruby-debug--get-current-line-from-output output))
+        (filename (ruby-debug--get-current-file-from-output output)))
+    (if (and current-line filename)
+        (progn
+          (find-file filename)
+          (goto-line current-line)))))
+
+(set-process-filter (get-buffer-process "server") 'ruby-debug--process-filter)
+
