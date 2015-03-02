@@ -9,8 +9,8 @@
       (ruby-debug-move-current-line))
   (ruby-debug-clear-overlay-arrows))
 
-(defun ruby-debug-move-current-line ()
-  (ruby-debug-add-fringe-current-line 'ruby-debug-current-line))
+(defun ruby-debug-move-line (line)
+  (ruby-debug-add-fringe-at-line 'ruby-debug-current-line line))
 
 (defun ruby-debug-next-line()
   (interactive)
@@ -26,9 +26,12 @@
   (insert "b")
   (comint-send-input))
 
-(defun get-marker-at-beginning-of-line()
+(defun get-marker-at-beginning-of-line (line)
+  (if (not line)
+      (setq line (line-number-at-pos)))
   (let (m)
     (save-excursion
+      (goto-line line)
       (beginning-of-line)
       (setq m (make-marker))
       (set-marker m (point) (current-buffer)))))
@@ -47,11 +50,11 @@
   (put temp-var 'overlay-arrow-bitmap 'fringemark-hollow-right-arrow)
   (set temp-var (get-marker-at-beginning-of-line)))
 
-
-(defun ruby-debug-add-fringe-current-line (temp-var)
+(defun ruby-debug-add-fringe-at-line (temp-var line)
   (ruby-debug-add-overlay-arrow temp-var)
   (put temp-var 'overlay-arrow-bitmap 'right-arrow)
-  (set temp-var (get-marker-at-beginning-of-line)))
+  (set temp-var (get-marker-at-beginning-of-line line)))
+
 
 (defun ruby-debug-add-fringe-breakpoint-to-list ()
   (interactive)
@@ -81,7 +84,9 @@
     (if (and current-line filename)
         (progn
           (find-file filename)
+          (ruby-debug-move-line current-line)
           (goto-line current-line)))))
 
 (set-process-filter (get-buffer-process "server") 'ruby-debug--process-filter)
+
 
