@@ -111,15 +111,30 @@
         (filename (ruby-debug--get-current-file-from-output output)))
     (if (and current-line filename)
         (progn
-          (find-file filename)
+          (ruby-debug--open-and-mark-file filename)
           (ruby-debug-move-line current-line)
           (goto-line current-line)
           (set-buffer "server")))))
 
+(defun ruby-debug--open-and-mark-file (filename)
+  (find-file filename)
+  (add-to-list 'ruby-debug--opened-buffers (current-buffer))
+  (if (not (bound-and-true-p ruby-debug-mode))
+      (ruby-debug-mode)))
+
+
+(defun ruby-debug--remove-debug-mode-from-all-buffers (opened-buffers)
+  (if opened-buffers
+      (progn
+        (with-current-buffer (car opened-buffers)
+          (ruby-debug-mode 0)
+          (ruby-debug--remove-debug-mode-from-all-buffers (cdr opened-buffers))))))
+
 
 (defun ruby-debug--finish-debug ()
-  (ruby-debug-clear-overlay-arrows))
-;  (ruby-debug-mode))
+  (ruby-debug-clear-overlay-arrows)
+  (ruby-debug--remove-debug-mode-from-all-buffers ruby-debug--opened-buffers)
+  (setq ruby-debug--opened-buffers nil))
 
 
 (add-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
