@@ -106,11 +106,13 @@
   (string-match "Completed [0-9]+" output))
 
 (defun ruby-debug--process-filter(output)
-  (ruby-debug-clear-current-line-fringe)
-  (ruby-debug--goto-debugged-line output)
-  (if (ruby-debug--is-debug-over output)
-      (ruby-debug--finish-debug))
-  (set-buffer "server"))
+  (if (string= "server" (buffer-name))
+      (progn
+        (ruby-debug-clear-current-line-fringe)
+        (ruby-debug--goto-debugged-line output)
+        (if (ruby-debug--is-debug-over output)
+            (ruby-debug--finish-debug))
+        (set-buffer "server"))))
 
 (defun ruby-debug--goto-debugged-line (output)
   (let ((current-line (ruby-debug--get-current-line-from-output output))
