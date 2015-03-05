@@ -1,4 +1,5 @@
 (defvar ruby-debug--opened-buffers nil)
+(defvar ruby-debug--is-in-debug-session nil)
 
 (define-minor-mode ruby-debug-mode
   "Get your foos in the right places."
@@ -24,6 +25,11 @@
 (defun ruby-debug-next-line()
   (interactive)
   (ruby-debug-run-command "next"))
+
+(defun ruby-debug--delete()
+  (interactive)
+  (ruby-debug-run-command "delete")
+  (ruby-debug-run-command "y"))
 
 (defun ruby-debug-continue()
   (interactive)
@@ -99,22 +105,27 @@
 (defun ruby-debug--is-debug-over (output)
   (string-match "Completed [0-9]+" output))
 
-
 (defun ruby-debug--process-filter(output)
   (ruby-debug-clear-current-line-fringe)
   (ruby-debug--goto-debugged-line output)
   (if (ruby-debug--is-debug-over output)
-      (ruby-debug--finish-debug)))
+      (ruby-debug--finish-debug))
+  (set-buffer "server"))
 
 (defun ruby-debug--goto-debugged-line (output)
   (let ((current-line (ruby-debug--get-current-line-from-output output))
         (filename (ruby-debug--get-current-file-from-output output)))
     (if (and current-line filename)
         (progn
+          (if (not ruby-debug--is-in-debug-session)
+              (ruby-debug--begin-debug-session))
           (ruby-debug--open-and-mark-file filename)
           (ruby-debug-move-line current-line)
-          (goto-line current-line)
-          (set-buffer "server")))))
+          (goto-line current-line)))))
+
+(defun ruby-debug--begin-debug-session ()
+  (setq ruby-debug--is-in-debug-session t)
+  (ruby-debug--delete))
 
 (defun ruby-debug--open-and-mark-file (filename)
   (find-file filename)
@@ -134,7 +145,8 @@
 (defun ruby-debug--finish-debug ()
   (ruby-debug-clear-overlay-arrows)
   (ruby-debug--remove-debug-mode-from-all-buffers ruby-debug--opened-buffers)
-  (setq ruby-debug--opened-buffers nil))
+  (setq ruby-debug--opened-buffers nil)
+  (setq ruby-debug--is-in-debug-session nil))
 
 
 (add-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
