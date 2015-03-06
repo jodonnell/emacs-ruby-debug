@@ -1,5 +1,6 @@
 (defvar ruby-debug--opened-buffers nil)
 (defvar ruby-debug--is-in-debug-session nil)
+(defvar ruby-debug--is-evalling nil)
 
 (define-minor-mode ruby-debug-mode
   "Get your foos in the right places."
@@ -8,6 +9,8 @@
             (define-key map (kbd "n") 'ruby-debug-next-line)
             (define-key map (kbd "c") 'ruby-debug-continue)
             (define-key map (kbd "j") 'ruby-debug-jump)
+            (define-key map (kbd "e") 'ruby-debug-eval)
+            (define-key map (kbd "s") 'ruby-debug-step)
             (define-key map (kbd "b") 'ruby-debug-add-fringe-breakpoint-to-list)
             map)
   (if (bound-and-true-p ruby-debug-mode)
@@ -25,6 +28,15 @@
 (defun ruby-debug-next-line()
   (interactive)
   (ruby-debug-run-command "next"))
+
+(defun ruby-debug-step()
+  (interactive)
+  (ruby-debug-run-command "step"))
+
+(defun ruby-debug-eval(eval)
+  (interactive "sEval: ")
+  (setq ruby-debug--is-evalling t)
+  (ruby-debug-run-command (concat "eval " eval)))
 
 (defun ruby-debug--delete()
   (interactive)
@@ -69,9 +81,8 @@
 
 (defun ruby-debug-add-fringe-breakpoint (temp-var)
   (ruby-debug-add-overlay-arrow temp-var)
-  (define-fringe-bitmap 'fringemark-hollow-right-arrow [128 192 96 48 24 48 96 192 128] 9 8 'center)
-  (put temp-var 'overlay-arrow-bitmap 'fringemark-hollow-right-arrow)
-  (set temp-var (get-marker-at-beginning-of-line nil)))
+  (put temp-var 'overlay-arrow-bitmap 'exclamation-mark)
+  (set temp-var (get-marker-at-beginning-of-line (line-number-at-pos))))
 
 (defun ruby-debug-add-fringe-at-line (temp-var line)
   (ruby-debug-add-overlay-arrow temp-var)
@@ -108,6 +119,10 @@
 (defun ruby-debug--process-filter(output)
   (if (string= "server" (buffer-name))
       (progn
+        (if ruby-debug--is-evalling
+            (progn
+              (setq ruby-debug--is-evalling nil)
+              (message output)))
         (ruby-debug-clear-current-line-fringe)
         (ruby-debug--goto-debugged-line output)
         (if (ruby-debug--is-debug-over output)
