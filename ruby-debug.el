@@ -11,6 +11,8 @@
             (define-key map (kbd "j") 'ruby-debug-jump)
             (define-key map (kbd "e") 'ruby-debug-eval)
             (define-key map (kbd "s") 'ruby-debug-step)
+            (define-key map (kbd "u") 'ruby-debug-up)
+            (define-key map (kbd "d") 'ruby-debug-down)
             (define-key map (kbd "b") 'ruby-debug-add-fringe-breakpoint-to-list)
             map)
   (if (bound-and-true-p ruby-debug-mode)
@@ -32,6 +34,14 @@
 (defun ruby-debug-step()
   (interactive)
   (ruby-debug-run-command "step"))
+
+(defun ruby-debug-up()
+  (interactive)
+  (ruby-debug-run-command "up"))
+
+(defun ruby-debug-down()
+  (interactive)
+  (ruby-debug-run-command "down"))
 
 (defun ruby-debug-eval(eval)
   (interactive "sEval: ")
