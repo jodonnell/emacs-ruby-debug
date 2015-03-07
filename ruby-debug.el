@@ -17,8 +17,9 @@
             (define-key map (kbd "u") 'ruby-debug--up)
             (define-key map (kbd "d") 'ruby-debug--down)
             (define-key map (kbd "b") 'ruby-debug--breakpoint)
+            (define-key map (kbd "B") 'ruby-debug--remove-all-breakpoints)
             map)
-  (if (bound-and-true-p ruby-debug--mode)
+  (if (bound-and-true-p ruby-debug-mode)
       (message "hi"))
   ;;(set-process-filter (get-buffer-process ruby-debug--process-name) 'ruby-debug--process-filter))
   (ruby-debug--clear-overlay-arrows))
@@ -50,7 +51,7 @@
   (setq ruby-debug--is-evalling t)
   (ruby-debug--run-command (concat "eval " eval)))
 
-(defun ruby-debug--delete()
+(defun ruby-debug--remove-all-breakpoints()
   (interactive)
   (ruby-debug--run-command "delete")
   (ruby-debug--run-command "y"))
@@ -162,20 +163,20 @@
 
 (defun ruby-debug--begin-debug-session ()
   (setq ruby-debug--is-in-debug-session t)
-  (ruby-debug--delete))
+  (ruby-debug--remove-all-breakpoints))
 
 (defun ruby-debug--open-and-mark-file (filename)
   (find-file filename)
   (add-to-list 'ruby-debug--opened-buffers (current-buffer))
-  (if (not (bound-and-true-p ruby-debug--mode))
-      (ruby-debug--mode)))
+  (if (not (bound-and-true-p ruby-debug-mode))
+      (ruby-debug-mode)))
 
 
 (defun ruby-debug--remove-debug-mode-from-all-buffers (opened-buffers)
   (if opened-buffers
       (progn
         (with-current-buffer (car opened-buffers)
-          (ruby-debug--mode 0)
+          (ruby-debug-mode 0)
           (ruby-debug--remove-debug-mode-from-all-buffers (cdr opened-buffers))))))
 
 
