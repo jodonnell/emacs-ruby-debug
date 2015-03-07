@@ -15,11 +15,11 @@
             (define-key map (kbd "s") 'ruby-debug-step)
             (define-key map (kbd "u") 'ruby-debug-up)
             (define-key map (kbd "d") 'ruby-debug-down)
-            (define-key map (kbd "b") 'ruby-debug-add-fringe-breakpoint-to-list)
+            (define-key map (kbd "b") 'ruby-debug-breakpoint)
             map)
   (if (bound-and-true-p ruby-debug-mode)
       (message "hi"))
-                                        ;(set-process-filter (get-buffer-process ruby-debug--process-name) 'ruby-debug--process-filter))
+  ;;(set-process-filter (get-buffer-process ruby-debug--process-name) 'ruby-debug--process-filter))
   (ruby-debug-clear-overlay-arrows))
 
 (defun ruby-debug-move-line (line)
@@ -63,6 +63,20 @@
   (ruby-debug-add-breakpoint-at-current-line)
   (ruby-debug-run-command "continue"))
 
+(defun ruby-debug-breakpoint ()
+  (interactive)
+  (ruby-debug-add-breakpoint-at-current-line)
+  (let ((x 0)
+        (symbol 'ruby-debug-breakpoint-mark0))
+    (while (boundp symbol)
+      (progn
+        (setq x (+ 1 x))
+        (setq symbol (make-symbol (concat "ruby-debug-breakpoint-mark" (number-to-string x))))))
+    (ruby-debug-add-fringe-breakpoint symbol)))
+
+(defun ruby-debug-add-breakpoint-at-current-line ()
+  (ruby-debug-run-command (concat "b " (number-to-string (line-number-at-pos)))))
+
 (defun get-marker-at-beginning-of-line (line)
   (if (not line)
       (setq line (line-number-at-pos)))
@@ -92,22 +106,6 @@
   (ruby-debug-add-overlay-arrow temp-var)
   (put temp-var 'overlay-arrow-bitmap 'right-arrow)
   (set temp-var (get-marker-at-beginning-of-line line)))
-
-
-(defun ruby-debug-add-breakpoint-at-current-line ()
-  (ruby-debug-run-command (concat "b " (number-to-string (line-number-at-pos)))))
-
-(defun ruby-debug-add-fringe-breakpoint-to-list ()
-  (interactive)
-  (ruby-debug-add-breakpoint-at-current-line)
-  (let ((x 0)
-        (symbol 'ruby-debug-breakpoint-mark0))
-    (while (boundp symbol)
-      (progn
-        (setq x (+ 1 x))
-        (setq symbol (make-symbol (concat "ruby-debug-breakpoint-mark" (number-to-string x))))))
-    (ruby-debug-add-fringe-breakpoint symbol)))
-
 
 (defun ruby-debug--get-current-line-from-output (output)
   (if (string-match "\n=> +\\([0-9]+\\):" output)
