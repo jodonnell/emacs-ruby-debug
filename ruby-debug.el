@@ -1,6 +1,8 @@
 (defvar ruby-debug--opened-buffers nil)
 (defvar ruby-debug--is-in-debug-session nil)
 (defvar ruby-debug--is-evalling nil)
+(defvar ruby-debug--output-since-last-command "")
+(defvar ruby-debug--process-name "server")
 
 (define-minor-mode ruby-debug-mode
   "Get your foos in the right places."
@@ -17,15 +19,14 @@
             map)
   (if (bound-and-true-p ruby-debug-mode)
       (message "hi"))
-                                        ;(set-process-filter (get-buffer-process "server") 'ruby-debug--process-filter))
+                                        ;(set-process-filter (get-buffer-process ruby-debug--process-name) 'ruby-debug--process-filter))
   (ruby-debug-clear-overlay-arrows))
 
 (defun ruby-debug-move-line (line)
   (ruby-debug-add-fringe-at-line 'ruby-debug-current-line line))
 
 (defun ruby-debug-run-command(cmd)
-  (set-buffer "server")
-  (process-send-string (get-buffer-process "server") (concat cmd "\n")))
+  (process-send-string (get-buffer-process ruby-debug--process-name) (concat cmd "\n")))
 
 (defun ruby-debug-next-line()
   (interactive)
@@ -61,13 +62,6 @@
   (interactive)
   (ruby-debug-add-breakpoint-at-current-line)
   (ruby-debug-run-command "continue"))
-
-(defun ruby-debug-add-breakpoint()
-  (interactive)
-  (ruby-debug-add-breakpoint-fringe-to-current-line)
-  (set-buffer "server")
-  (insert "b")
-  (comint-send-input))
 
 (defun get-marker-at-beginning-of-line (line)
   (if (not line)
@@ -127,8 +121,9 @@
   (string-match "Completed [0-9]+" output))
 
 (defun ruby-debug--process-filter(output)
-  (if (string= "server" (buffer-name))
+  (if (string= ruby-debug--process-name (buffer-name))
       (progn
+        (setq ruby-debug--output-since-last-command (concat ruby-debug--output-since-last-command output))
         (if ruby-debug--is-evalling
             (progn
               (setq ruby-debug--is-evalling nil)
@@ -137,7 +132,7 @@
         (ruby-debug--goto-debugged-line output)
         (if (ruby-debug--is-debug-over output)
             (ruby-debug--finish-debug))
-        (set-buffer "server"))))
+        (set-buffer ruby-debug--process-name))))
 
 (defun ruby-debug--goto-debugged-line (output)
   (let ((current-line (ruby-debug--get-current-line-from-output output))
