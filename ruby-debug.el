@@ -120,21 +120,37 @@
 (defun ruby-debug--is-debug-over (output)
   (string-match "Completed [0-9]+" output))
 
+(defun ruby-debug--is-complete-output-chunk (output)
+  (or
+   (ruby-debug--is-debug-over output)
+   (string-match "(byebug)" output)))
+
 (defun ruby-debug--process-filter(output)
   (if (string= ruby-debug--process-name (buffer-name))
       (progn
         (setq ruby-debug--output-since-last-command (concat ruby-debug--output-since-last-command output))
-        (if ruby-debug--is-evalling
+        (if (ruby-debug--is-complete-output-chunk ruby-debug--output-since-last-command)
             (progn
-              (setq ruby-debug--is-evalling nil)
-              (message output)))
-        (ruby-debug-clear-current-line-fringe)
-        (ruby-debug--goto-debugged-line output)
-        (if (ruby-debug--is-debug-over output)
-            (ruby-debug--finish-debug))
-        (set-buffer ruby-debug--process-name))))
+              (ruby-debug--process-output ruby-debug--output-since-last-command)
+              (set-buffer ruby-debug--process-name)
+
+              (setq ruby-debug--output-since-last-command ""))))))
+
+(defun ruby-debug--process-output (output)
+  (if ruby-debug--is-evalling
+      (ruby-debug--print-and-reset-eval output))
+
+  (ruby-debug--goto-debugged-line output)
+  (if (ruby-debug--is-debug-over output)
+      (ruby-debug--finish-debug)))
+
+(defun ruby-debug--print-and-reset-eval (output)
+  (setq ruby-debug--is-evalling nil)
+  (message output))
 
 (defun ruby-debug--goto-debugged-line (output)
+  (ruby-debug-clear-current-line-fringe)
+
   (let ((current-line (ruby-debug--get-current-line-from-output output))
         (filename (ruby-debug--get-current-file-from-output output)))
     (if (and current-line filename)

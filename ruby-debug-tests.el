@@ -13,7 +13,7 @@
    21:   def delete_like_movie")
 
 (setq test-end-doc
-"(byebug) c
+"
   Rendered welcome/find_critics.html.erb within layouts/application (2.3ms)
 Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
 
@@ -27,5 +27,11 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
                    "/Users/jacob/programming/movie_matchmaker/app/controllers/welcome_controller.rb")))
 
 (ert-deftest ruby-debug--is-debug-over-test ()
+  (should (not (ruby-debug--is-debug-over test-doc)))
   (should (ruby-debug--is-debug-over test-end-doc)))
 
+
+(ert-deftest ruby-debug--is-complete-output-chunk-test ()
+  (should (not (ruby-debug--is-complete-output-chunk test-doc)))
+  (should (ruby-debug--is-complete-output-chunk (concat test-doc "\n(byebug)")))
+  (should (ruby-debug--is-complete-output-chunk test-end-doc)))
