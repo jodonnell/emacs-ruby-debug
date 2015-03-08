@@ -3,6 +3,7 @@
 
 (defvar ruby-debug--is-evalling nil)
 (defvar ruby-debug--is-showing-locals nil)
+(defvar ruby-debug--is-locals-window-open nil)
 (defvar ruby-debug--output-since-last-command "")
 (defvar ruby-debug--process-name "server")
 
@@ -17,7 +18,7 @@
             (define-key map (kbd "s") 'ruby-debug--step)
             (define-key map (kbd "u") 'ruby-debug--up)
             (define-key map (kbd "d") 'ruby-debug--down)
-            (define-key map (kbd "l") 'ruby-debug--show-local-variables)
+            (define-key map (kbd "l") 'ruby-debug--show-local-variables-activate)
             (define-key map (kbd "i") 'ruby-debug--show-instance-variables)
             (define-key map (kbd "b") 'ruby-debug--breakpoint)
             (define-key map (kbd "B") 'ruby-debug--remove-all-breakpoints)
@@ -33,8 +34,15 @@
 (defun ruby-debug--run-command(cmd)
   (process-send-string (get-buffer-process ruby-debug--process-name) (concat cmd "\n")))
 
-(defun ruby-debug--show-local-variables ()
+(defun ruby-debug--show-local-variables-activate ()
   (interactive)
+  (if ruby-debug--is-locals-window-open
+      (setq ruby-debug--is-locals-window-open nil)
+    (progn
+      (setq ruby-debug--is-locals-window-open t)
+      (ruby-debug--show-local-variables))))
+
+(defun ruby-debug--show-local-variables ()
   (setq ruby-debug--is-showing-locals t)
   (ruby-debug--run-command "var local"))
 
@@ -191,7 +199,9 @@
               (ruby-debug--begin-debug-session))
           (ruby-debug--open-and-mark-file filename)
           (ruby-debug--move-line current-line)
-          (goto-line current-line)))))
+          (goto-line current-line)
+          (if ruby-debug--is-locals-window-open
+              (ruby-debug--show-local-variables))))))
 
 (defun ruby-debug--begin-debug-session ()
   (setq ruby-debug--is-in-debug-session t)
@@ -199,7 +209,9 @@
 
 (defun ruby-debug--open-and-mark-file (filename)
   (find-file filename)
-  (delete-other-windows)
+  (save-excursion
+    (if (not (string= "*Ruby Debug Locals*" (buffer-name (window-buffer (other-window 1)))))
+        (delete-other-windows)))
   (read-only-mode 1)
   (add-to-list 'ruby-debug--opened-buffers (current-buffer))
   (if (not (bound-and-true-p ruby-debug-mode))
@@ -219,6 +231,7 @@
   (ruby-debug--clear-overlay-arrows)
   (ruby-debug--remove-debug-mode-from-all-buffers ruby-debug--opened-buffers)
   (setq ruby-debug--opened-buffers nil)
+  (setq ruby-debug--is-locals-window-open nil)
   (setq ruby-debug--is-in-debug-session nil))
 
 
