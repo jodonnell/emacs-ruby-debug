@@ -2,6 +2,7 @@
 (defvar ruby-debug--is-in-debug-session nil)
 
 (defvar ruby-debug--is-evalling nil)
+(defvar ruby-debug--is-showing-locals nil)
 (defvar ruby-debug--output-since-last-command "")
 (defvar ruby-debug--process-name "server")
 
@@ -16,6 +17,8 @@
             (define-key map (kbd "s") 'ruby-debug--step)
             (define-key map (kbd "u") 'ruby-debug--up)
             (define-key map (kbd "d") 'ruby-debug--down)
+            (define-key map (kbd "l") 'ruby-debug--show-local-variables)
+            (define-key map (kbd "i") 'ruby-debug--show-instance-variables)
             (define-key map (kbd "b") 'ruby-debug--breakpoint)
             (define-key map (kbd "B") 'ruby-debug--remove-all-breakpoints)
             map)
@@ -29,6 +32,15 @@
 
 (defun ruby-debug--run-command(cmd)
   (process-send-string (get-buffer-process ruby-debug--process-name) (concat cmd "\n")))
+
+(defun ruby-debug--show-local-variables ()
+  (interactive)
+  (ruby-debug--is-showing-locals t)
+  (ruby-debug--run-command "var local"))
+
+(defun ruby-debug--show-instance-variables ()
+  (interactive)
+  (ruby-debug--run-command "var instance"))
 
 (defun ruby-debug--next-line()
   (interactive)
@@ -146,7 +158,7 @@
 
 (defun ruby-debug--print-and-reset-eval (output)
   (setq ruby-debug--is-evalling nil)
-  (message output))
+  (message (replace-regexp-in-string "\n(byebug)" "" output)))
 
 (defun ruby-debug--goto-debugged-line (output)
   (ruby-debug--clear-current-line-fringe)
@@ -167,6 +179,8 @@
 
 (defun ruby-debug--open-and-mark-file (filename)
   (find-file filename)
+  (delete-other-windows)
+  (read-only-mode 1)
   (add-to-list 'ruby-debug--opened-buffers (current-buffer))
   (if (not (bound-and-true-p ruby-debug-mode))
       (ruby-debug-mode)))
@@ -177,6 +191,7 @@
       (progn
         (with-current-buffer (car opened-buffers)
           (ruby-debug-mode 0)
+          (read-only-mode 0)
           (ruby-debug--remove-debug-mode-from-all-buffers (cdr opened-buffers))))))
 
 
