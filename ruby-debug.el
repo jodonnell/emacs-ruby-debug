@@ -35,7 +35,7 @@
 
 (defun ruby-debug--show-local-variables ()
   (interactive)
-  (ruby-debug--is-showing-locals t)
+  (setq ruby-debug--is-showing-locals t)
   (ruby-debug--run-command "var local"))
 
 (defun ruby-debug--show-instance-variables ()
@@ -152,6 +152,9 @@
   (if ruby-debug--is-evalling
       (ruby-debug--print-and-reset-eval output))
 
+  (if ruby-debug--is-showing-locals
+      (ruby-debug--print-and-reset-locals output))
+  
   (ruby-debug--goto-debugged-line output)
   (if (ruby-debug--is-debug-over output)
       (ruby-debug--finish-debug)))
@@ -159,6 +162,23 @@
 (defun ruby-debug--print-and-reset-eval (output)
   (setq ruby-debug--is-evalling nil)
   (message (replace-regexp-in-string "\n(byebug)" "" output)))
+
+(defun ruby-debug--print-and-reset-locals (output)
+  (let ((vars (replace-regexp-in-string "\n(byebug)" "" output)))
+    (setq ruby-debug--is-showing-locals nil)
+    (set-window-buffer
+     (split-window-below (ruby-debug--vars-window-size vars))
+     (get-buffer-create "*Ruby Debug Locals*"))
+    (with-current-buffer (get-buffer-create "*Ruby Debug Locals*")
+      (erase-buffer)
+      (insert vars))))
+
+(defun ruby-debug--vars-window-size (output)
+  (let ((number-of-lines (+ 2 (s-count-matches "\n" output))))
+    (* -1
+       (if (> number-of-lines (window-min-size))
+           number-of-lines
+         (window-min-size)))))
 
 (defun ruby-debug--goto-debugged-line (output)
   (ruby-debug--clear-current-line-fringe)
