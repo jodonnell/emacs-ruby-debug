@@ -45,8 +45,10 @@
 
 (defun ruby-debug--close-locals-window ()
   (setq ruby-debug--is-locals-window-open nil)
-  (delete-window (get-buffer-window "*Ruby Debug Locals*"))
-  (kill-buffer "*Ruby Debug Locals*"))
+  (if (get-buffer-window "*Ruby Debug Locals*")
+      (progn
+      (delete-window (get-buffer-window "*Ruby Debug Locals*"))
+      (kill-buffer "*Ruby Debug Locals*"))))
 
 (defun ruby-debug--show-local-variables ()
   (setq ruby-debug--is-showing-locals t)
