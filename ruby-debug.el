@@ -74,10 +74,16 @@
   (interactive)
   (ruby-debug--run-command "down"))
 
-(defun ruby-debug--eval(eval)
-  (interactive "sEval: ")
+(defun ruby-debug--eval()
+  (interactive)
   (setq ruby-debug--is-evalling t)
-  (ruby-debug--run-command (concat "eval " eval)))
+  (ruby-debug--run-command (concat "eval " (ruby-debug--eval-prompt))))
+
+(defun ruby-debug--eval-prompt ()
+  (let ((eval ""))
+    (if (use-region-p)
+        (setq eval (buffer-substring (region-beginning) (region-end))))
+    (read-string "Eval: " eval)))
 
 (defun ruby-debug--remove-all-breakpoints()
   (interactive)
