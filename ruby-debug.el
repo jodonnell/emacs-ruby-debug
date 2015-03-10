@@ -33,7 +33,7 @@
 
 ;; sets the mark.  why?
 (defun ruby-debug--run-command(cmd)
-  (comint-send-string (get-buffer-process ruby-debug--process-name) (concat cmd "\n")))
+  (comint-simple-send (get-buffer-process ruby-debug--process-name) cmd))
 
 (defun ruby-debug--show-local-variables-activate ()
   (interactive)
