@@ -118,7 +118,7 @@
       (setq line (line-number-at-pos)))
   (let (m)
     (save-excursion
-      (goto-line line)
+      (ruby-debug--goto-line line)
       (beginning-of-line)
       (setq m (make-marker))
       (set-marker m (point) (current-buffer)))))
@@ -214,7 +214,7 @@
               (ruby-debug--begin-debug-session))
           (ruby-debug--open-and-mark-file filename)
           (ruby-debug--move-line current-line)
-          (goto-line current-line)
+          (ruby-debug--goto-line current-line)
           (if ruby-debug--is-locals-window-open
               (ruby-debug--show-local-variables))))))
 
@@ -250,6 +250,11 @@
   (setq ruby-debug--opened-buffers nil)
   (ruby-debug--close-locals-window)
   (setq ruby-debug--is-in-debug-session nil))
+
+(defun ruby-debug--goto-line (num)
+  (goto-char (point-min))
+  (forward-line (1- num)))
+
 
 
 (add-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
