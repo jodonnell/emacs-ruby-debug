@@ -188,11 +188,17 @@
 (defun ruby-debug--print-and-reset-locals (output)
   (let ((vars (replace-regexp-in-string "\n(byebug)" "" output)))
     (setq ruby-debug--is-showing-locals nil)
+
+    (if (not (get-buffer "*Ruby Debug Locals*"))
+        (progn
+          (with-current-buffer (get-buffer-create "*Ruby Debug Locals*")
+            (toggle-truncate-lines 1))))
+
     (if (not (ruby-debug--is-window-locals-showing))
         (set-window-buffer
          (split-window-below (ruby-debug--vars-window-size vars))
-         (get-buffer-create "*Ruby Debug Locals*")))
-    (with-current-buffer (get-buffer-create "*Ruby Debug Locals*")
+         (get-buffer "*Ruby Debug Locals*")))
+    (with-current-buffer (get-buffer "*Ruby Debug Locals*")
       (erase-buffer)
       (insert vars))))
 
