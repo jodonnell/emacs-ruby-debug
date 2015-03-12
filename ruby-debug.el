@@ -2,8 +2,15 @@
 (defvar ruby-debug--is-in-debug-session nil)
 
 (defvar ruby-debug--is-evalling nil)
+
+(defvar ruby-debug--local-variable-window "*Ruby Debug Local*")
 (defvar ruby-debug--is-showing-locals nil)
 (defvar ruby-debug--is-locals-window-open nil)
+
+(defvar ruby-debug--instance-variable-window "*Ruby Debug Instance*")
+(defvar ruby-debug--is-showing-instance nil)
+(defvar ruby-debug--is-instance-window-open nil)
+
 (defvar ruby-debug--output-since-last-command "")
 (defvar ruby-debug--process-name "server")
 
@@ -19,43 +26,49 @@
             (define-key map (kbd "u") 'ruby-debug--up)
             (define-key map (kbd "d") 'ruby-debug--down)
             (define-key map (kbd "l") 'ruby-debug--show-local-variables-activate)
-            (define-key map (kbd "i") 'ruby-debug--show-instance-variables)
+            (define-key map (kbd "i") 'ruby-debug--show-instance-variables-activate)
             (define-key map (kbd "b") 'ruby-debug--breakpoint)
             (define-key map (kbd "B") 'ruby-debug--remove-all-breakpoints)
             map)
-  (if (bound-and-true-p ruby-debug-mode)
-      (message "hi"))
-  ;;(set-process-filter (get-buffer-process ruby-debug--process-name) 'ruby-debug--process-filter))
+  ;; (if (bound-and-true-p ruby-debug-mode)
+  ;;     (message "hi"))
   (ruby-debug--clear-overlay-arrows))
 
 (defun ruby-debug--move-line (line)
   (ruby-debug--add-fringe-at-line 'ruby-debug--current-line line))
 
-;; sets the mark.  why?
 (defun ruby-debug--run-command(cmd)
   (comint-simple-send (get-buffer-process ruby-debug--process-name) cmd))
 
 (defun ruby-debug--show-local-variables-activate ()
   (interactive)
   (if ruby-debug--is-locals-window-open
-      (ruby-debug--close-locals-window)
+      (ruby-debug--close-window ruby-debug--local-variable-window 'ruby-debug--is-locals-window-open)
     (progn
       (setq ruby-debug--is-locals-window-open t)
       (ruby-debug--show-local-variables))))
 
-(defun ruby-debug--close-locals-window ()
-  (setq ruby-debug--is-locals-window-open nil)
-  (if (get-buffer-window "*Ruby Debug Locals*")
+(defun ruby-debug--show-instance-variables-activate ()
+  (interactive)
+  (if ruby-debug--is-instance-window-open
+      (ruby-debug--close-window ruby-debug--instance-variable-window 'ruby-debug--is-instance-window-open)
+    (progn
+      (setq ruby-debug--is-instance-window-open t)
+      (ruby-debug--show-instance-variables))))
+
+(defun ruby-debug--close-window (buffer-name is-open-var)
+  (set is-open-var nil)
+  (if (get-buffer-window buffer-name)
       (progn
-      (delete-window (get-buffer-window "*Ruby Debug Locals*"))
-      (kill-buffer "*Ruby Debug Locals*"))))
+      (delete-window (get-buffer-window buffer-name))
+      (kill-buffer buffer-name))))
 
 (defun ruby-debug--show-local-variables ()
   (setq ruby-debug--is-showing-locals t)
   (ruby-debug--run-command "var local"))
 
 (defun ruby-debug--show-instance-variables ()
-  (interactive)
+  (setq ruby-debug--is-showing-instance t)
   (ruby-debug--run-command "var instance"))
 
 (defun ruby-debug--next-line()
@@ -175,7 +188,10 @@
       (ruby-debug--print-and-reset-eval output))
 
   (if ruby-debug--is-showing-locals
-      (ruby-debug--print-and-reset-locals output))
+      (ruby-debug--print-and-reset-vars output ruby-debug--local-variable-window 'ruby-debug--is-showing-locals #'ruby-debug--is-window-locals-showing))
+
+  (if ruby-debug--is-showing-instance
+      (ruby-debug--print-and-reset-vars output ruby-debug--instance-variable-window 'ruby-debug--is-showing-instance #'ruby-debug--is-window-instance-showing))
   
   (ruby-debug--goto-debugged-line output)
   (if (ruby-debug--is-debug-over output)
@@ -185,20 +201,20 @@
   (setq ruby-debug--is-evalling nil)
   (message (replace-regexp-in-string "\n(byebug)" "" output)))
 
-(defun ruby-debug--print-and-reset-locals (output)
+(defun ruby-debug--print-and-reset-vars (output var-window is-showing is-window-showing)
   (let ((vars (replace-regexp-in-string "\n(byebug)" "" output)))
-    (setq ruby-debug--is-showing-locals nil)
+    (set is-showing nil)
 
-    (if (not (get-buffer "*Ruby Debug Locals*"))
+    (if (not (get-buffer var-window))
         (progn
-          (with-current-buffer (get-buffer-create "*Ruby Debug Locals*")
+          (with-current-buffer (get-buffer-create var-window)
             (toggle-truncate-lines 1))))
 
-    (if (not (ruby-debug--is-window-locals-showing))
+    (if (not (funcall is-window-showing))
         (set-window-buffer
          (split-window-below (ruby-debug--vars-window-size vars))
-         (get-buffer "*Ruby Debug Locals*")))
-    (with-current-buffer (get-buffer "*Ruby Debug Locals*")
+         (get-buffer var-window)))
+    (with-current-buffer (get-buffer var-window)
       (erase-buffer)
       (insert vars))))
 
@@ -231,7 +247,7 @@
 
 (defun ruby-debug--open-and-mark-file (filename)
   (find-file filename)
-  (if (not (ruby-debug--is-window-locals-showing))
+  (if (not (or (ruby-debug--is-window-locals-showing) (ruby-debug--is-window-instance-showing)))
       (delete-other-windows))
   (read-only-mode 1)
   (add-to-list 'ruby-debug--opened-buffers (current-buffer))
@@ -239,8 +255,11 @@
       (ruby-debug-mode)))
 
 (defun ruby-debug--is-window-locals-showing ()
-  (get-buffer-window "*Ruby Debug Locals*"))
-  
+  (get-buffer-window ruby-debug--local-variable-window))
+
+(defun ruby-debug--is-window-instance-showing ()
+  (get-buffer-window ruby-debug--instance-variable-window))
+
 (defun ruby-debug--remove-debug-mode-from-all-buffers (opened-buffers)
   (if opened-buffers
       (progn
@@ -254,7 +273,8 @@
   (ruby-debug--clear-overlay-arrows)
   (ruby-debug--remove-debug-mode-from-all-buffers ruby-debug--opened-buffers)
   (setq ruby-debug--opened-buffers nil)
-  (ruby-debug--close-locals-window)
+  (ruby-debug--close-window ruby-debug--instance-variable-window 'ruby-debug--is-instance-window-open)
+  (ruby-debug--close-window ruby-debug--local-variable-window 'ruby-debug--is-locals-window-open)
   (setq ruby-debug--is-in-debug-session nil))
 
 (defun ruby-debug--goto-line (num)
