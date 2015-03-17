@@ -43,7 +43,7 @@
 (defun ruby-debug--show-local-variables-activate ()
   (interactive)
   (if ruby-debug--is-locals-window-open
-      (ruby-debug--close-window ruby-debug--local-variable-window 'ruby-debug--is-locals-window-open)
+      (ruby-debug--close-locals-window)
     (progn
       (setq ruby-debug--is-locals-window-open t)
       (ruby-debug--show-local-variables))))
@@ -51,10 +51,16 @@
 (defun ruby-debug--show-instance-variables-activate ()
   (interactive)
   (if ruby-debug--is-instance-window-open
-      (ruby-debug--close-window ruby-debug--instance-variable-window 'ruby-debug--is-instance-window-open)
+      (ruby-debug--close-instance-window)
     (progn
       (setq ruby-debug--is-instance-window-open t)
       (ruby-debug--show-instance-variables))))
+
+(defun ruby-debug--close-instance-window ()
+  (ruby-debug--close-window ruby-debug--instance-variable-window 'ruby-debug--is-instance-window-open))
+
+(defun ruby-debug--close-locals-window ()
+  (ruby-debug--close-window ruby-debug--local-variable-window 'ruby-debug--is-locals-window-open))
 
 (defun ruby-debug--close-window (buffer-name is-open-var)
   (set is-open-var nil)
