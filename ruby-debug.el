@@ -1,5 +1,3 @@
-;; -*- lexical-binding: t -*-
-
 (defvar ruby-debug--opened-buffers nil)
 (defvar ruby-debug--is-in-debug-session nil)
 
@@ -293,54 +291,3 @@
 
 (add-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
 ;(remove-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
-
-
-
-
-(defun fringer()
-  (cl-flet*
-      (
-       (goto-line
-        (num)
-        (goto-char (point-min))
-        (forward-line (1- num)))
-       (get-marker-at-beginning-of-line
-        (line)
-        (if (not line)
-            (setq line (line-number-at-pos)))
-        (let (m)
-          (save-excursion
-            (goto-line line)
-            (beginning-of-line)
-            (setq m (make-marker))
-            (set-marker m (point) (current-buffer)))))
-       (add-overlay-arrow
-        (temp-var)
-        (make-variable-buffer-local temp-var)
-        (add-to-list 'overlay-arrow-variable-list temp-var))
-       (add-fringe-breakpoint
-        (temp-var)
-        (add-overlay-arrow temp-var)
-        (put temp-var 'overlay-arrow-bitmap 'exclamation-mark)
-        (set temp-var (get-marker-at-beginning-of-line (line-number-at-pos))))
-       (add-fringe-at-line
-        (temp-var line)
-        (add-overlay-arrow temp-var)
-        (put temp-var 'overlay-arrow-bitmap 'right-arrow)
-        (set temp-var (get-marker-at-beginning-of-line line))))
-
-    (values 
-     (lambda ()
-       (let ((x 0)
-             (symbol 'ruby-debug--breakpoint-mark0))
-         (while (boundp symbol)
-           (progn
-             (setq x (+ 1 x))
-             (setq symbol (make-symbol (concat "ruby-debug--breakpoint-mark" (number-to-string x))))))
-         (add-fringe-breakpoint symbol)))
-     (lambda  (line)
-      (add-fringe-at-line 'ruby-debug--current-line line)))))
-
-(let ((funcs (fringer)))
-  (fset 'ruby-debug--add-fringe-breakpoint (car funcs))
-  (fset 'ruby-debug--move-line (nth 1 funcs)))
