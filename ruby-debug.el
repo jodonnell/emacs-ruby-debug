@@ -36,6 +36,9 @@
   ;;     (message "hi"))
   (ruby-debug--clear-overlay-arrows))
 
+(defun ruby-debug--move-line (line)
+  (ruby-debug--add-fringe-at-line 'ruby-debug--current-line line))
+
 (defun ruby-debug--run-command(cmd)
   (comint-simple-send (get-buffer-process ruby-debug--process-name) cmd))
 
@@ -120,7 +123,13 @@
 (defun ruby-debug--breakpoint ()
   (interactive)
   (ruby-debug--add-breakpoint-at-current-line)
-  (ruby-debug--add-fringe-breakpoint))
+  (let ((x 0)
+        (symbol 'ruby-debug--breakpoint-mark0))
+    (while (boundp symbol)
+      (progn
+        (setq x (+ 1 x))
+        (setq symbol (make-symbol (concat "ruby-debug--breakpoint-mark" (number-to-string x))))))
+    (ruby-debug--add-fringe-breakpoint symbol)))
 
 (defun ruby-debug--add-breakpoint-at-current-line ()
   (ruby-debug--run-command (concat "b " (number-to-string (line-number-at-pos)))))
@@ -134,6 +143,26 @@
       (beginning-of-line)
       (setq m (make-marker))
       (set-marker m (point) (current-buffer)))))
+
+(defun ruby-debug--clear-overlay-arrows ()
+  (setq overlay-arrow-variable-list '()))
+
+(defun ruby-debug--clear-current-line-fringe ()
+  (setq overlay-arrow-variable-list (delete 'ruby-debug--current-line overlay-arrow-variable-list)))
+
+(defun ruby-debug--add-overlay-arrow (temp-var)
+  (make-variable-buffer-local temp-var)
+  (add-to-list 'overlay-arrow-variable-list temp-var))
+
+(defun ruby-debug--add-fringe-breakpoint (temp-var)
+  (ruby-debug--add-overlay-arrow temp-var)
+  (put temp-var 'overlay-arrow-bitmap 'exclamation-mark)
+  (set temp-var (ruby-debug--get-marker-at-beginning-of-line (line-number-at-pos))))
+
+(defun ruby-debug--add-fringe-at-line (temp-var line)
+  (ruby-debug--add-overlay-arrow temp-var)
+  (put temp-var 'overlay-arrow-bitmap 'right-arrow)
+  (set temp-var (ruby-debug--get-marker-at-beginning-of-line line)))
 
 (defun ruby-debug--get-current-line-from-output (output)
   (if (string-match "\n=> +\\([0-9]+\\):" output)
@@ -266,6 +295,8 @@
 ;(remove-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
 
 
+
+
 (defun fringer()
   (cl-flet*
       (
@@ -308,15 +339,8 @@
              (setq symbol (make-symbol (concat "ruby-debug--breakpoint-mark" (number-to-string x))))))
          (add-fringe-breakpoint symbol)))
      (lambda  (line)
-       (add-fringe-at-line 'ruby-debug--current-line line))
-     (lambda ()
-       (setq overlay-arrow-variable-list '()))
-     (lambda ()
-       (setq overlay-arrow-variable-list (delete 'ruby-debug--current-line overlay-arrow-variable-list)))
-     )))
+      (add-fringe-at-line 'ruby-debug--current-line line)))))
 
 (let ((funcs (fringer)))
-  (fset 'ruby-debug--add-fringe-breakpoint (nth 0 funcs))
-  (fset 'ruby-debug--move-line (nth 1 funcs))
-  (fset 'ruby-debug--clear-overlay-arrows (nth 2 funcs))
-  (fset 'ruby-debug--clear-current-line-fringe (nth 3 funcs)))
+  (fset 'ruby-debug--add-fringe-breakpoint (car funcs))
+  (fset 'ruby-debug--move-line (nth 1 funcs)))
