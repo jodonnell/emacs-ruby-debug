@@ -60,9 +60,23 @@
             (define-key map (kbd "b") 'ruby-debug--breakpoint)
             (define-key map (kbd "B") 'ruby-debug--remove-all-breakpoints)
             map)
-  ;; (if (bound-and-true-p ruby-debug-mode)
-  ;;     (message "hi"))
+
+  (if (bound-and-true-p ruby-debug-mode)
+      (add-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
+    (remove-hook 'comint-output-filter-functions 'ruby-debug--process-filter))
+
   (ruby-debug--clear-overlay-arrows))
+
+(defun ruby-debug--process-filter (output)
+  "The process filter on the servers buffer, gives OUTPUT."
+  (if (string= ruby-debug--process-name (buffer-name))
+      (progn
+        (setq ruby-debug--output-since-last-command (concat ruby-debug--output-since-last-command output))
+        (if (ruby-debug--is-complete-output-chunk ruby-debug--output-since-last-command)
+            (progn
+              (ruby-debug--process-output ruby-debug--output-since-last-command)
+              (set-buffer ruby-debug--process-name)
+              (setq ruby-debug--output-since-last-command ""))))))
 
 (defun ruby-debug--move-line (line)
   "Change the fringe to reflect the currently debugged LINE."
@@ -238,18 +252,6 @@
    (ruby-debug--is-debug-over output)
    (string-match "(byebug)" output)))
 
-(defun ruby-debug--process-filter (output)
-  "The process filter on the servers buffer, gives OUTPUT."
-  (if (string= ruby-debug--process-name (buffer-name))
-      (progn
-        (setq ruby-debug--output-since-last-command (concat ruby-debug--output-since-last-command output))
-        (if (ruby-debug--is-complete-output-chunk ruby-debug--output-since-last-command)
-            (progn
-              (ruby-debug--process-output ruby-debug--output-since-last-command)
-              (set-buffer ruby-debug--process-name)
-
-              (setq ruby-debug--output-since-last-command ""))))))
-
 (defun ruby-debug--process-output (output)
   "Process server OUTPUT."
   (if ruby-debug--is-evalling
@@ -362,7 +364,7 @@
 
 
 
-(add-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
+;(add-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
 ;(remove-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
 
 ;;; ruby-debug.el ends here
