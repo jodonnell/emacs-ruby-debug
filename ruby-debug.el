@@ -69,14 +69,12 @@
 
 (defun ruby-debug--process-filter (output)
   "The process filter on the servers buffer, gives OUTPUT."
-  (if (string= ruby-debug--process-name (buffer-name))
-      (progn
-        (setq ruby-debug--output-since-last-command (concat ruby-debug--output-since-last-command output))
-        (if (ruby-debug--is-complete-output-chunk ruby-debug--output-since-last-command)
-            (progn
-              (ruby-debug--process-output ruby-debug--output-since-last-command)
-              (set-buffer ruby-debug--process-name)
-              (setq ruby-debug--output-since-last-command ""))))))
+  (when (string= ruby-debug--process-name (buffer-name))
+    (setq ruby-debug--output-since-last-command (concat ruby-debug--output-since-last-command output))
+    (when (ruby-debug--is-complete-output-chunk ruby-debug--output-since-last-command)
+      (ruby-debug--process-output ruby-debug--output-since-last-command)
+      (set-buffer ruby-debug--process-name)
+      (setq ruby-debug--output-since-last-command ""))))
 
 (defun ruby-debug--move-line (line)
   "Change the fringe to reflect the currently debugged LINE."
@@ -91,18 +89,16 @@
   (interactive)
   (if ruby-debug--is-locals-window-open
       (ruby-debug--close-locals-window)
-    (progn
       (setq ruby-debug--is-locals-window-open t)
-      (ruby-debug--show-local-variables))))
+      (ruby-debug--show-local-variables)))
 
 (defun ruby-debug--show-instance-variables-activate ()
   "Show instance variables."
   (interactive)
   (if ruby-debug--is-instance-window-open
       (ruby-debug--close-instance-window)
-    (progn
-      (setq ruby-debug--is-instance-window-open t)
-      (ruby-debug--show-instance-variables))))
+    (setq ruby-debug--is-instance-window-open t)
+    (ruby-debug--show-instance-variables)))
 
 (defun ruby-debug--close-instance-window ()
   "Close instance variables."
@@ -115,10 +111,9 @@
 (defun ruby-debug--close-window (buffer-name is-open-var)
   "Close window named BUFFER-NAME and set the IS-OPEN-VAR to false."
   (set is-open-var nil)
-  (if (get-buffer-window buffer-name)
-      (progn
-      (delete-window (get-buffer-window buffer-name))
-      (kill-buffer buffer-name))))
+  (when (get-buffer-window buffer-name)
+    (delete-window (get-buffer-window buffer-name))
+    (kill-buffer buffer-name)))
 
 (defun ruby-debug--show-local-variables ()
   "Show local variables."
@@ -277,10 +272,9 @@
   (let ((vars (replace-regexp-in-string "\n(byebug)" "" output)))
     (set is-showing nil)
 
-    (if (not (get-buffer var-window))
-        (progn
-          (with-current-buffer (get-buffer-create var-window)
-            (toggle-truncate-lines 1))))
+    (when (not (get-buffer var-window))
+      (with-current-buffer (get-buffer-create var-window)
+        (toggle-truncate-lines 1)))
 
     (if (not (funcall is-window-showing))
         (set-window-buffer
@@ -304,15 +298,14 @@
 
   (let ((current-line (ruby-debug--get-current-line-from-output output))
         (filename (ruby-debug--get-current-file-from-output output)))
-    (if (and current-line filename)
-        (progn
-          (if (not ruby-debug--is-in-debug-session)
-              (ruby-debug--begin-debug-session))
-          (ruby-debug--open-and-mark-file filename)
-          (ruby-debug--move-line current-line)
-          (ruby-debug--goto-line current-line)
-          (if ruby-debug--is-locals-window-open
-              (ruby-debug--show-local-variables))))))
+    (when (and current-line filename)
+      (if (not ruby-debug--is-in-debug-session)
+          (ruby-debug--begin-debug-session))
+      (ruby-debug--open-and-mark-file filename)
+      (ruby-debug--move-line current-line)
+      (ruby-debug--goto-line current-line)
+      (if ruby-debug--is-locals-window-open
+          (ruby-debug--show-local-variables)))))
 
 (defun ruby-debug--begin-debug-session ()
   "TODO."
@@ -340,12 +333,11 @@
 
 (defun ruby-debug--remove-debug-mode-from-all-buffers (opened-buffers)
   "Turn off debug mode for OPENED-BUFFERS buffers."
-  (if opened-buffers
-      (progn
-        (with-current-buffer (car opened-buffers)
-          (ruby-debug-mode 0)
-          (read-only-mode 0)
-          (ruby-debug--remove-debug-mode-from-all-buffers (cdr opened-buffers))))))
+  (when opened-buffers
+    (with-current-buffer (car opened-buffers)
+      (ruby-debug-mode 0)
+      (read-only-mode 0)
+      (ruby-debug--remove-debug-mode-from-all-buffers (cdr opened-buffers)))))
 
 
 (defun ruby-debug--finish-debug ()
