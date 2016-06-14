@@ -47,6 +47,20 @@
 (define-minor-mode ruby-debug-mode
   "Get your foos in the right places."
   :lighter " ruby-debug"
+
+  (if (bound-and-true-p ruby-debug-mode)
+      (progn
+        ;; (set-process-filter proc 'ruby-debug--process-filter) instead?
+        (add-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
+        (setq ruby-debug--process-name (buffer-name)))
+    (remove-hook 'comint-output-filter-functions 'ruby-debug--process-filter))
+
+  (ruby-debug--clear-overlay-arrows))
+
+
+(define-minor-mode ruby-debug-control-mode
+  "Get your foos in the right places."
+  :lighter " ruby-debug-control"
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map (kbd "n") 'ruby-debug--next-line)
             (define-key map (kbd "c") 'ruby-debug--continue)
@@ -60,12 +74,8 @@
             (define-key map (kbd "b") 'ruby-debug--breakpoint)
             (define-key map (kbd "B") 'ruby-debug--remove-all-breakpoints)
             map)
-
-  (if (bound-and-true-p ruby-debug-mode)
-      (add-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
-    (remove-hook 'comint-output-filter-functions 'ruby-debug--process-filter))
-
   (ruby-debug--clear-overlay-arrows))
+
 
 (defun ruby-debug--process-filter (output)
   "The process filter on the servers buffer, gives OUTPUT."
@@ -320,8 +330,8 @@
       (delete-other-windows))
   (read-only-mode 1)
   (add-to-list 'ruby-debug--opened-buffers (current-buffer))
-  (if (not (bound-and-true-p ruby-debug-mode))
-      (ruby-debug-mode)))
+  (if (not (bound-and-true-p ruby-debug-control-mode))
+      (ruby-debug-control-mode)))
 
 (defun ruby-debug--is-window-locals-showing ()
   "TODO."
@@ -335,7 +345,7 @@
   "Turn off debug mode for OPENED-BUFFERS buffers."
   (when opened-buffers
     (with-current-buffer (car opened-buffers)
-      (ruby-debug-mode 0)
+      (ruby-debug-control-mode 0)
       (read-only-mode 0)
       (ruby-debug--remove-debug-mode-from-all-buffers (cdr opened-buffers)))))
 
