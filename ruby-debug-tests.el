@@ -35,3 +35,57 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
   (should (not (ruby-debug--is-complete-output-chunk test-doc)))
   (should (ruby-debug--is-complete-output-chunk (concat test-doc "\n(byebug)")))
   (should (ruby-debug--is-complete-output-chunk test-end-doc)))
+
+(ert-deftest ruby-debug--test-file-open ()
+  (my-fixture
+   (lambda ()
+     (should (string= (what-line) "Line 6")))))
+
+(ert-deftest ruby-debug--test-next-line ()
+  (my-fixture
+   (lambda ()
+     (ruby-debug--next-line)
+     (wait-for (string= (what-line) "Line 7")))))
+
+;; (ert-deftest ruby-debug--ends-at-end-of-output ()
+;;   (my-fixture
+;;    (lambda ()
+;;      (ruby-debug--continue)
+;;      (wait-for (string= (what-line) "Line 7")))))
+
+(defun my-fixture (body)
+  (unwind-protect
+      (progn
+        (ruby-debug-test--init)
+        (ruby-debug-test--wait-for-file-to-open "test.rb")
+        (set-buffer "test.rb")
+        (funcall body))
+    (ruby-debug-test--cleanup)))
+
+(defun ruby-debug-test--init ()
+  (shell "test-ruby-debug-mode")
+  (ruby-debug-mode)
+  (ruby-debug--run-command "./test.rb"))
+
+(defun ruby-debug-test--cleanup ()
+  (set-buffer "test-ruby-debug-mode")
+  (ruby-debug--continue)
+  (ruby-debug-mode)
+  (kill-process (get-buffer-process ruby-debug--process-name))
+  (set-process-query-on-exit-flag (get-buffer-process ruby-debug--process-name) nil)
+  (kill-buffer "test-ruby-debug-mode"))
+
+(defun ruby-debug-test--wait-for-file-to-open (filename)
+  (wait-for (string= (buffer-name (window-buffer)) filename)))
+
+(defmacro wait-for (func)
+  `(ert-wait-for 4 (lambda () ,func)))
+
+(defmacro ert-wait-for (timeout predicate &rest body)
+  "Wait for maximum TIMEOUT second for PREDICATE to verify, than execute forms in BODY."
+  `(with-timeout
+       (,timeout (ert-fail (format "Timeout of %ds exceeded while waiting for predicate." ,timeout)))
+     (while (not (funcall ,predicate))
+       (accept-process-output nil 0.05))
+     ,@body))
+
