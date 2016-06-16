@@ -47,11 +47,11 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
      (ruby-debug--next-line)
      (wait-for (string= (what-line) "Line 7")))))
 
-;; (ert-deftest ruby-debug--ends-at-end-of-output ()
-;;   (my-fixture
-;;    (lambda ()
-;;      (ruby-debug--continue)
-;;      (wait-for (string= (what-line) "Line 7")))))
+ (ert-deftest ruby-debug--ends-at-end-of-output ()
+   (my-fixture
+    (lambda ()
+      (ruby-debug--continue)
+      (wait-for (eq nil ruby-debug--is-in-debug-session)))))
 
 (defun my-fixture (body)
   (unwind-protect
