@@ -79,12 +79,12 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
   (wait-for (string= (buffer-name (window-buffer)) filename)))
 
 (defmacro wait-for (func)
-  `(ert-wait-for 4 (lambda () ,func)))
+  `(ert-wait-for 0.8 (lambda () ,func)))
 
 (defmacro ert-wait-for (timeout predicate &rest body)
   "Wait for maximum TIMEOUT second for PREDICATE to verify, than execute forms in BODY."
   `(with-timeout
-       (,timeout (ert-fail (format "Timeout of %ds exceeded while waiting for predicate." ,timeout)))
+       (,timeout (ert-fail ,predicate))
      (while (not (funcall ,predicate))
        (accept-process-output nil 0.05))
      ,@body))
