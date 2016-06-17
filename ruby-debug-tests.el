@@ -47,11 +47,19 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
      (ruby-debug--next-line)
      (wait-for (string= (what-line) "Line 8")))))
 
+(ert-deftest ruby-debug--test-step-into ()
+  (my-fixture
+   (lambda ()
+     (ruby-debug--next-line)
+     (ruby-debug--step)
+     (ruby-debug-test--wait-for-file-to-open "test_class.rb")
+     (should (string= (what-line) "Line 3")))))
+
  (ert-deftest ruby-debug--ends-at-end-of-output ()
    (my-fixture
     (lambda ()
       (ruby-debug--continue)
-      (wait-for (eq nil ruby-debug--is-in-debug-session))
+      (ruby-debug-test--wait-for-debug-to-end)
       (should (eq nil overlay-arrow-variable-list)))))
 
 (defun my-fixture (body)
@@ -59,9 +67,12 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
       (progn
         (ruby-debug-test--init)
         (ruby-debug-test--wait-for-file-to-open "test.rb")
-        (set-buffer "test.rb")
         (funcall body))
     (ruby-debug-test--cleanup)))
+
+(defun ruby-debug-test--wait-for-debug-to-end ()
+  (wait-for (eq nil ruby-debug--is-in-debug-session)))
+
 
 (defun ruby-debug-test--init ()
   (shell "test-ruby-debug-mode")
@@ -71,13 +82,15 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
 (defun ruby-debug-test--cleanup ()
   (set-buffer "test-ruby-debug-mode")
   (ruby-debug--continue)
+  (ruby-debug-test--wait-for-debug-to-end)
   (ruby-debug-mode)
   (kill-process (get-buffer-process ruby-debug--process-name))
   (set-process-query-on-exit-flag (get-buffer-process ruby-debug--process-name) nil)
   (kill-buffer "test-ruby-debug-mode"))
 
 (defun ruby-debug-test--wait-for-file-to-open (filename)
-  (wait-for (string= (buffer-name (window-buffer)) filename)))
+  (wait-for (string= (buffer-name (window-buffer)) filename))
+  (set-buffer filename))
 
 (defmacro wait-for (func)
   `(ert-wait-for 0.8 (lambda () ,func)))
