@@ -39,19 +39,20 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
 (ert-deftest ruby-debug--test-file-open ()
   (my-fixture
    (lambda ()
-     (should (string= (what-line) "Line 6")))))
+     (should (string= (what-line) "Line 8")))))
 
 (ert-deftest ruby-debug--test-next-line ()
   (my-fixture
    (lambda ()
      (ruby-debug--next-line)
-     (wait-for (string= (what-line) "Line 7")))))
+     (wait-for (string= (what-line) "Line 8")))))
 
  (ert-deftest ruby-debug--ends-at-end-of-output ()
    (my-fixture
     (lambda ()
       (ruby-debug--continue)
-      (wait-for (eq nil ruby-debug--is-in-debug-session)))))
+      (wait-for (eq nil ruby-debug--is-in-debug-session))
+      (should (eq nil overlay-arrow-variable-list)))))
 
 (defun my-fixture (body)
   (unwind-protect
