@@ -50,17 +50,21 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
 (ert-deftest ruby-debug--test-step-into ()
   (my-fixture
    (lambda ()
-     (ruby-debug--next-line)
-     (ruby-debug--step)
-     (ruby-debug-test--wait-for-file-to-open "test_class.rb")
+     (ruby-debug-test--step-into-first-file)
      (should (string= (what-line) "Line 3")))))
 
  (ert-deftest ruby-debug--ends-at-end-of-output ()
    (my-fixture
     (lambda ()
+      (ruby-debug-test--step-into-first-file)
       (ruby-debug--continue)
       (ruby-debug-test--wait-for-debug-to-end)
       (should (eq nil overlay-arrow-variable-list)))))
+
+(defun ruby-debug-test--step-into-first-file ()
+      (ruby-debug--next-line)
+      (ruby-debug--step)
+      (ruby-debug-test--wait-for-file-to-open "test_class.rb"))
 
 (defun my-fixture (body)
   (unwind-protect
