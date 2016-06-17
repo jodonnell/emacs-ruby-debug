@@ -53,6 +53,14 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
      (ruby-debug-test--step-into-first-file)
      (should (string= (what-line) "Line 3")))))
 
+(ert-deftest ruby-debug--test-locals-window ()
+  :expected-result :failed
+  (my-fixture
+   (lambda ()
+     (ruby-debug--show-local-variables)
+     (wait-for (get-buffer "*Ruby Debug Instance*"))
+     (should (string= (buffer-string) "apple")))))
+
  (ert-deftest ruby-debug--ends-at-end-of-output ()
    (my-fixture
     (lambda ()
@@ -61,6 +69,7 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
       (ruby-debug-test--wait-for-debug-to-end)
       (ruby-debug-test--buffer-should-be-reset "test.rb")
       (ruby-debug-test--buffer-should-be-reset "test_class.rb")
+      ;; test closes windows
       (should (eq nil overlay-arrow-variable-list)))))
 
 (defun ruby-debug-test--buffer-should-be-reset (filename)
