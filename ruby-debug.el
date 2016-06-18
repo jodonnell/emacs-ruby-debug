@@ -86,7 +86,7 @@
       (set-buffer ruby-debug--process-name)
       (setq ruby-debug--output-since-last-command ""))))
 
-(defun ruby-debug--move-line (line)
+(defun ruby-debug--move-fringe (line)
   "Change the fringe to reflect the currently debugged LINE."
   (ruby-debug--add-fringe-at-line 'ruby-debug--current-line line))
 
@@ -320,7 +320,7 @@
       (if (not ruby-debug--is-in-debug-session)
           (ruby-debug--begin-debug-session))
       (ruby-debug--open-and-mark-file filename)
-      (ruby-debug--move-line current-line)
+      (ruby-debug--move-fringe current-line)
       (ruby-debug--goto-line current-line)
 
       (if ruby-debug--is-instance-window-open
