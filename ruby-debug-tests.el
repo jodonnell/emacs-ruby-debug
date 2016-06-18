@@ -54,12 +54,11 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
      (should (string= (what-line) "Line 3")))))
 
 (ert-deftest ruby-debug--test-locals-window ()
-  :expected-result :failed
   (my-fixture
    (lambda ()
      (ruby-debug--show-local-variables)
-     (wait-for (get-buffer "*Ruby Debug Instance*"))
-     (should (string= (buffer-string) "apple")))))
+     (ruby-debug-test--wait-for-buffer-to-exist-and-set "*Ruby Debug Local*")
+     (should (string= (buffer-contents-no-properties) "apple = 3\nobj = nil ")))))
 
  (ert-deftest ruby-debug--ends-at-end-of-output ()
    (my-fixture
@@ -71,6 +70,14 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
       (ruby-debug-test--buffer-should-be-reset "test_class.rb")
       ;; test closes windows
       (should (eq nil overlay-arrow-variable-list)))))
+
+
+(defun ruby-debug-test--wait-for-buffer-to-exist-and-set (buffer-name)
+  (wait-for (get-buffer buffer-name))
+  (set-buffer buffer-name))
+
+(defun buffer-contents-no-properties ()
+    (buffer-substring-no-properties (point-min) (point-max)))
 
 (defun ruby-debug-test--buffer-should-be-reset (filename)
       (set-buffer filename)
@@ -87,12 +94,12 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
       (progn
         (ruby-debug-test--init)
         (ruby-debug-test--wait-for-file-to-open "test.rb")
+        (sleep-for 0.05) ; needed to clear the deleting breakpoints
         (funcall body))
     (ruby-debug-test--cleanup)))
 
 (defun ruby-debug-test--wait-for-debug-to-end ()
   (wait-for (eq nil ruby-debug--is-in-debug-session)))
-
 
 (defun ruby-debug-test--init ()
   (shell "test-ruby-debug-mode")

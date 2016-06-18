@@ -319,9 +319,10 @@
 
 (defun ruby-debug--begin-debug-session ()
   "TODO."
-  (setq ruby-debug--is-in-debug-session t)
   (setq comint-scroll-to-bottom-on-output t)
-  (ruby-debug--remove-all-breakpoints))
+  (ruby-debug--remove-all-breakpoints)
+  (setq ruby-debug--is-in-debug-session t))
+
 
 (defun ruby-debug--open-and-mark-file (filename)
   "TODO FILENAME."
