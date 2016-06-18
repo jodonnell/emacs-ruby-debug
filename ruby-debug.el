@@ -99,8 +99,8 @@
   (interactive)
   (if ruby-debug--is-locals-window-open
       (ruby-debug--close-locals-window)
-      (setq ruby-debug--is-locals-window-open t)
-      (ruby-debug--show-local-variables)))
+    (setq ruby-debug--is-locals-window-open t)
+    (ruby-debug--show-local-variables)))
 
 (defun ruby-debug--show-instance-variables-activate ()
   "Show instance variables."
@@ -273,7 +273,7 @@
       (ruby-debug--finish-debug)))
 
 (defun ruby-debug--print-and-reset-eval (output)
-  "Print the OUTPUT from the server.  I don't really remember why I need this."
+  "Prints the eval OUTPUT and then turns off eval mode."
   (setq ruby-debug--is-evalling nil)
   (message (replace-regexp-in-string "\n(byebug)" "" output)))
 
@@ -282,17 +282,25 @@
   (let ((vars (replace-regexp-in-string "\n(byebug)" "" output)))
     (set is-showing nil)
 
-    (when (not (get-buffer var-window))
-      (with-current-buffer (get-buffer-create var-window)
-        (toggle-truncate-lines 1)))
+    (ruby-debug--create-debug-window-if-none-existant var-window)
+    (ruby-debug--show-debug-window-if-not-showing vars var-window is-window-showing)
+    (ruby-debug--insert-output-into-debug-window vars var-window)))
 
-    (if (not (funcall is-window-showing))
-        (set-window-buffer
-         (split-window-below (ruby-debug--vars-window-size vars))
-         (get-buffer var-window)))
-    (with-current-buffer (get-buffer var-window)
-      (erase-buffer)
-      (insert vars))))
+(defun ruby-debug--insert-output-into-debug-window (vars var-window)
+  (with-current-buffer (get-buffer var-window)
+    (erase-buffer)
+    (insert vars)))
+
+(defun ruby-debug--show-debug-window-if-not-showing (vars var-window is-window-showing)
+  (if (not (funcall is-window-showing))
+      (set-window-buffer
+       (split-window-below (ruby-debug--vars-window-size vars))
+       (get-buffer var-window))))
+
+(defun ruby-debug--create-debug-window-if-none-existant (debug-window)
+  (when (not (get-buffer debug-window))
+    (with-current-buffer (get-buffer-create debug-window)
+      (toggle-truncate-lines 1))))
 
 (defun ruby-debug--vars-window-size (output)
   "Calculate the size of the new window based on size of OUTPUT."
