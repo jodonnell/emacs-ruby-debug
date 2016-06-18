@@ -18,59 +18,58 @@
 Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
 
 
-
-(ert-deftest ruby-debug--get-current-line-from-output-test ()
+(ert-deftest ruby-debug-test--get-current-line-from-output ()
   (should (= (ruby-debug--get-current-line-from-output test-doc) 17)))
 
-(ert-deftest ruby-debug--get-current-file-from-output-test ()
+(ert-deftest ruby-debug-test--get-current-file-from-output ()
   (should (string= (ruby-debug--get-current-file-from-output test-doc)
                    "/Users/jacob/programming/movie_matchmaker/app/controllers/welcome_controller.rb")))
 
-(ert-deftest ruby-debug--is-debug-over-test ()
+(ert-deftest ruby-debug-test--is-debug-over ()
   (should (not (ruby-debug--is-debug-over test-doc)))
   (should (ruby-debug--is-debug-over test-end-doc)))
 
 
-(ert-deftest ruby-debug--is-complete-output-chunk-test ()
+(ert-deftest ruby-debug-test--is-complete-output-chunk ()
   (should (not (ruby-debug--is-complete-output-chunk test-doc)))
   (should (ruby-debug--is-complete-output-chunk (concat test-doc "\n(byebug)")))
   (should (ruby-debug--is-complete-output-chunk test-end-doc)))
 
-(ert-deftest ruby-debug--test-file-open ()
-  (my-fixture
+(ert-deftest ruby-debug-test--file-open ()
+  (fixture
    (lambda ()
      (should (string= (what-line) "Line 8")))))
 
-(ert-deftest ruby-debug--test-next-line ()
-  (my-fixture
+(ert-deftest ruby-debug-test--next-line ()
+  (fixture
    (lambda ()
      (ruby-debug--next-line)
      (wait-for (string= (what-line) "Line 8")))))
 
-(ert-deftest ruby-debug--test-step-into ()
-  (my-fixture
+(ert-deftest ruby-debug-test--step-into ()
+  (fixture
    (lambda ()
      (ruby-debug-test--step-into-first-file)
      (should (string= (what-line) "Line 3")))))
 
-(ert-deftest ruby-debug--test-locals-window ()
-  (my-fixture
+(ert-deftest ruby-debug-test--locals-window ()
+  (fixture
    (lambda ()
      (ruby-debug--show-local-variables-activate)
      (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--local-variable-window)
-     (should (string= (buffer-contents-no-properties) "apple = 3\nobj = nil ")))))
+     (should (string= (ruby-debug-test--buffer-contents-no-properties) "apple = 3\nobj = nil ")))))
 
-(ert-deftest ruby-debug--test-instance-window ()
-  (my-fixture
+(ert-deftest ruby-debug-test--instance-window ()
+  (fixture
    (lambda ()
      (ruby-debug-test--step-into-first-file)
      (ruby-debug--show-instance-variables-activate)
      (ruby-debug--next-line)
      (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--instance-variable-window)
-     (wait-for (string= (buffer-contents-no-properties) "@integer = 3 ")))))
+     (wait-for (string= (ruby-debug-test--buffer-contents-no-properties) "@integer = 3 ")))))
 
- (ert-deftest ruby-debug--ends-at-end-of-output ()
-   (my-fixture
+ (ert-deftest ruby-debug-test--ends-at-end-of-output ()
+   (fixture
     (lambda ()
       (ruby-debug-test--step-into-first-file)
       (ruby-debug--continue)
@@ -85,7 +84,7 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
   (wait-for (get-buffer buffer-name))
   (set-buffer buffer-name))
 
-(defun buffer-contents-no-properties ()
+(defun ruby-debug-test--buffer-contents-no-properties ()
     (buffer-substring-no-properties (point-min) (point-max)))
 
 (defun ruby-debug-test--buffer-should-be-reset (filename)
@@ -98,7 +97,7 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
       (ruby-debug--step)
       (ruby-debug-test--wait-for-file-to-open "test_class.rb"))
 
-(defun my-fixture (body)
+(defun fixture (body)
   (unwind-protect
       (progn
         (ruby-debug-test--init)
@@ -139,3 +138,7 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
        (accept-process-output nil 0.05))
      ,@body))
 
+
+;; Local Variables:
+;; nameless-current-name: "ruby-debug-test"
+;; End:
