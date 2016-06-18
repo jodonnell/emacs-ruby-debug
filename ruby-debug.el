@@ -322,6 +322,10 @@
       (ruby-debug--open-and-mark-file filename)
       (ruby-debug--move-line current-line)
       (ruby-debug--goto-line current-line)
+
+      (if ruby-debug--is-instance-window-open
+          (ruby-debug--show-instance-variables))
+
       (if ruby-debug--is-locals-window-open
           (ruby-debug--show-local-variables)))))
 

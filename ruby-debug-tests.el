@@ -65,8 +65,9 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
    (lambda ()
      (ruby-debug-test--step-into-first-file)
      (ruby-debug--show-instance-variables-activate)
+     (ruby-debug--next-line)
      (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--instance-variable-window)
-     (should (string= (buffer-contents-no-properties) " ")))))
+     (wait-for (string= (buffer-contents-no-properties) "@integer = 3 ")))))
 
  (ert-deftest ruby-debug--ends-at-end-of-output ()
    (my-fixture
