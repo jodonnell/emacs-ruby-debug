@@ -56,9 +56,17 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
 (ert-deftest ruby-debug--test-locals-window ()
   (my-fixture
    (lambda ()
-     (ruby-debug--show-local-variables)
-     (ruby-debug-test--wait-for-buffer-to-exist-and-set "*Ruby Debug Local*")
+     (ruby-debug--show-local-variables-activate)
+     (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--local-variable-window)
      (should (string= (buffer-contents-no-properties) "apple = 3\nobj = nil ")))))
+
+(ert-deftest ruby-debug--test-instance-window ()
+  (my-fixture
+   (lambda ()
+     (ruby-debug-test--step-into-first-file)
+     (ruby-debug--show-instance-variables-activate)
+     (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--instance-variable-window)
+     (should (string= (buffer-contents-no-properties) " ")))))
 
  (ert-deftest ruby-debug--ends-at-end-of-output ()
    (my-fixture
