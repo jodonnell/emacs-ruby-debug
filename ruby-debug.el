@@ -388,6 +388,20 @@
   (goto-char (point-min))
   (forward-line (1- num)))
 
+(defun rails-server-start ()
+  (interactive)
+  (let ((process-connection-type nil))  ; use a pipe
+    (shell "server")
+    (comint-simple-send (get-buffer-process "server") "cd .")
+    (comint-simple-send (get-buffer-process "server") "script -q /dev/null rails s")))
+
+(defun rails-server-restart ()
+  (interactive)
+  (shell "server")
+  (comint-kill-subjob)
+  (sit-for 0.5)
+  (rails-server-start))
+
 
 ;(add-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
 ;(remove-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
