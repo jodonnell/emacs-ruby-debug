@@ -245,7 +245,7 @@
 (defun ruby-debug--get-current-file-from-output (output)
   "Get the current file from OUTPUT."
   (if (string-match "\n\[[0-9]+, [0-9]+\] in \\(.*\\)" output)
-      (match-string 1 output)))
+      (string-trim-right (match-string 1 output))))
 
 (defun ruby-debug--is-debug-over (output)
   "Look for a server finished request message from OUTPUT."

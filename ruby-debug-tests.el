@@ -25,6 +25,12 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
   (should (string= (ruby-debug--get-current-file-from-output test-doc)
                    "/Users/jacob/programming/movie_matchmaker/app/controllers/welcome_controller.rb")))
 
+(ert-deftest ruby-debug-test--get-current-file-from-output-with-artifact ()
+  (should (string= (ruby-debug--get-current-file-from-output
+                    "
+[12, 21] in /test/welcome_controller.rb")
+                   "/test/welcome_controller.rb")))
+
 (ert-deftest ruby-debug-test--is-debug-over ()
   (should (not (ruby-debug--is-debug-over test-doc)))
   (should (ruby-debug--is-debug-over test-end-doc)))
