@@ -310,7 +310,6 @@
 (defun ruby-debug--create-debug-window-if-none-existant (debug-window)
   (when (not (get-buffer debug-window))
     (with-current-buffer (get-buffer-create debug-window)
-      (remove-dos-eol)
       (toggle-truncate-lines 1))))
 
 (defun ruby-debug--vars-window-size (output)
