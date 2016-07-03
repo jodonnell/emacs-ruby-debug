@@ -279,16 +279,22 @@
 (defun ruby-debug--print-and-reset-eval (output)
   "Prints the eval OUTPUT and then turns off eval mode."
   (setq ruby-debug--is-evalling nil)
-  (message (replace-regexp-in-string "\n(byebug)" "" output)))
+  (message (ruby-debug--clean-output output)))
 
 (defun ruby-debug--print-and-reset-vars (output var-window is-showing is-window-showing)
   "OUTPUT VAR-WINDOW IS-SHOWING IS-WINDOW-SHOWING."
-  (let ((vars (replace-regexp-in-string "\n(byebug)" "" output)))
+  (let ((vars (ruby-debug--clean-output output)))
     (set is-showing nil)
 
     (ruby-debug--create-debug-window-if-none-existant var-window)
     (ruby-debug--show-debug-window-if-not-showing vars var-window is-window-showing)
     (ruby-debug--insert-output-into-debug-window vars var-window)))
+
+(defun ruby-debug--clean-output (output)
+  (ruby-debug--remove-string-from-string "var \\(local\\|instance\\)\n" (ruby-debug--remove-string-from-string "eval .*\n" (ruby-debug--remove-string-from-string "\n(byebug)" (ruby-debug--remove-string-from-string "" output)))))
+
+(defun ruby-debug--remove-string-from-string (remove-string output)
+  (replace-regexp-in-string remove-string "" output))
 
 (defun ruby-debug--insert-output-into-debug-window (vars var-window)
   (with-current-buffer (get-buffer var-window)
@@ -304,6 +310,7 @@
 (defun ruby-debug--create-debug-window-if-none-existant (debug-window)
   (when (not (get-buffer debug-window))
     (with-current-buffer (get-buffer-create debug-window)
+      (remove-dos-eol)
       (toggle-truncate-lines 1))))
 
 (defun ruby-debug--vars-window-size (output)

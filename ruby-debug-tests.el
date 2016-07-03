@@ -31,6 +31,34 @@ Completed 200 OK in 4822ms (Views: 439.7ms | ActiveRecord: 64.1ms)")
 [12, 21] in /test/welcome_controller.rb")
                    "/test/welcome_controller.rb")))
 
+(ert-deftest ruby-debug-test--clean-output-local ()
+  (should (string= (ruby-debug--clean-output
+                    "var local
+bang
+(byebug)")
+                   "bang")))
+
+(ert-deftest ruby-debug-test--clean-output-instance ()
+  (should (string= (ruby-debug--clean-output
+                    "var instance
+bang
+(byebug)")
+                   "bang")))
+
+(ert-deftest ruby-debug-test--clean-output-instance-with-artifact ()
+  (should (string= (ruby-debug--clean-output
+                    "var instance
+bang
+(byebug)")
+                   "bang")))
+
+(ert-deftest ruby-debug-test--clean-output-eval ()
+  (should (string= (ruby-debug--clean-output
+                    "eval person
+bang
+(byebug)")
+                   "bang")))
+
 (ert-deftest ruby-debug-test--is-debug-over ()
   (should (not (ruby-debug--is-debug-over test-doc)))
   (should (ruby-debug--is-debug-over test-end-doc)))
