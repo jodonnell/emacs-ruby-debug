@@ -273,10 +273,6 @@
 (defun ruby-debug--is-complete-output-chunk (output)
   "Check to see if the output check is done from OUTPUT."
   (string-match "(byebug)" output))
-;; was trying this when byebug was cut out of output, pretty sure i can delete but gonna keep around for a bit
-;; (if (string-match "\n\[[0-9]+, \\([0-9]+\\)\] in " output)
-;;        (let ((final-line-number (match-string 1 output)))
-;;          (string-match (concat "\n[[:space:]]+" final-line-number ": ") output)))))
 
 (defun ruby-debug--process-output (output)
   "Process a completed chunk of server OUTPUT."
