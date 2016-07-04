@@ -81,10 +81,29 @@
   "The process filter on the servers buffer, gives OUTPUT."
   (when (string= ruby-debug--process-name (buffer-name))
     (setq ruby-debug--output-since-last-command (concat ruby-debug--output-since-last-command output))
-    (when (ruby-debug--is-complete-output-chunk ruby-debug--output-since-last-command)
-      (ruby-debug--process-output ruby-debug--output-since-last-command)
-      (set-buffer ruby-debug--process-name)
-      (setq ruby-debug--output-since-last-command ""))))
+    (ruby-debug--process-output-while-full-chunk-exists)))
+
+(defun ruby-debug--process-output-while-full-chunk-exists ()
+  (while (ruby-debug--has-full-chunk)
+    (let ((chunk (ruby-debug--get-and-remove-full-chunk)))
+
+      (when (ruby-debug--is-debug-over chunk)
+        (ruby-debug--finish-debug))
+
+      (when (ruby-debug--is-complete-output-chunk chunk)
+        (ruby-debug--process-output chunk)
+        (set-buffer ruby-debug--process-name)))))
+
+(defun ruby-debug--has-full-chunk ()
+  (string-match "\\(\\(.\\|\n\\)*?\\)\\((byebug)\\|Completed [0-9]+\\)" ruby-debug--output-since-last-command))
+
+(defun ruby-debug--get-and-remove-full-chunk ()
+  (if (ruby-debug--has-full-chunk)
+      (progn
+        (let ((matched-chunk (match-string 0 ruby-debug--output-since-last-command)))
+          (setq ruby-debug--output-since-last-command (string-trim-left (substring ruby-debug--output-since-last-command (length matched-chunk))))
+          matched-chunk))
+    nil))
 
 (defun ruby-debug--move-fringe (line)
   "Change the fringe to reflect the currently debugged LINE."
@@ -253,28 +272,28 @@
 
 (defun ruby-debug--is-complete-output-chunk (output)
   "Check to see if the output check is done from OUTPUT."
-  (or
-   (ruby-debug--is-debug-over output)
-   (string-match "(byebug)" output)))
+  (string-match "(byebug)" output))
 ;; was trying this when byebug was cut out of output, pretty sure i can delete but gonna keep around for a bit
 ;; (if (string-match "\n\[[0-9]+, \\([0-9]+\\)\] in " output)
 ;;        (let ((final-line-number (match-string 1 output)))
 ;;          (string-match (concat "\n[[:space:]]+" final-line-number ": ") output)))))
 
 (defun ruby-debug--process-output (output)
-  "Process server OUTPUT."
+  "Process a completed chunk of server OUTPUT."
   (if ruby-debug--is-evalling
       (ruby-debug--print-and-reset-eval output))
 
-  (if ruby-debug--is-showing-locals
+  (if (and ruby-debug--is-showing-locals (string-match "^\[^@\]" output))
       (ruby-debug--print-and-reset-vars output ruby-debug--local-variable-window 'ruby-debug--is-showing-locals #'ruby-debug--is-window-locals-showing))
 
-  (if ruby-debug--is-showing-instance
+  (if (and ruby-debug--is-showing-instance (string-match "^@" output))
       (ruby-debug--print-and-reset-vars output ruby-debug--instance-variable-window 'ruby-debug--is-showing-instance #'ruby-debug--is-window-instance-showing))
-  
-  (ruby-debug--goto-debugged-line output)
-  (if (ruby-debug--is-debug-over output)
-      (ruby-debug--finish-debug)))
+
+  (if (ruby-debug--was-movement-command output)
+      (ruby-debug--goto-debugged-line output)))
+
+(defun ruby-debug--was-movement-command (output)
+  (and (ruby-debug--get-current-line-from-output output) (ruby-debug--get-current-file-from-output output)))
 
 (defun ruby-debug--print-and-reset-eval (output)
   "Prints the eval OUTPUT and then turns off eval mode."
@@ -288,7 +307,8 @@
 
     (ruby-debug--create-debug-window-if-none-existant var-window)
     (ruby-debug--show-debug-window-if-not-showing vars var-window is-window-showing)
-    (ruby-debug--insert-output-into-debug-window vars var-window)))
+    (ruby-debug--insert-output-into-debug-window vars var-window)
+    ))
 
 (defun ruby-debug--clean-output (output)
   (ruby-debug--remove-string-from-string "var \\(local\\|instance\\)\n" (ruby-debug--remove-string-from-string "eval .*\n" (ruby-debug--remove-string-from-string "\n(byebug)" (ruby-debug--remove-string-from-string "" output)))))
@@ -326,25 +346,23 @@
 
   (let ((current-line (ruby-debug--get-current-line-from-output output))
         (filename (ruby-debug--get-current-file-from-output output)))
-    (when (and current-line filename)
-      (if (not ruby-debug--is-in-debug-session)
-          (ruby-debug--begin-debug-session))
-      (ruby-debug--open-and-mark-file filename)
-      (ruby-debug--move-fringe current-line)
-      (ruby-debug--goto-line current-line)
+    (if (not ruby-debug--is-in-debug-session)
+        (ruby-debug--begin-debug-session))
+    (ruby-debug--open-and-mark-file filename)
+    (ruby-debug--move-fringe current-line)
+    (ruby-debug--goto-line current-line)
 
-      (if ruby-debug--is-instance-window-open
-          (ruby-debug--show-instance-variables))
+    (if ruby-debug--is-instance-window-open
+        (ruby-debug--show-instance-variables))
 
-      (if ruby-debug--is-locals-window-open
-          (ruby-debug--show-local-variables)))))
+    (if ruby-debug--is-locals-window-open
+        (ruby-debug--show-local-variables))))
 
 (defun ruby-debug--begin-debug-session ()
   "TODO."
   (setq comint-scroll-to-bottom-on-output t)
   (ruby-debug--remove-all-breakpoints)
   (setq ruby-debug--is-in-debug-session t))
-
 
 (defun ruby-debug--open-and-mark-file (filename)
   "TODO FILENAME."
@@ -371,7 +389,6 @@
       (ruby-debug-control-mode 0)
       (read-only-mode 0)
       (ruby-debug--remove-debug-mode-from-all-buffers (cdr opened-buffers)))))
-
 
 (defun ruby-debug--finish-debug ()
   "Tear down the debugger code."

@@ -59,6 +59,17 @@ bang
 (byebug)")
                    "bang")))
 
+
+(ert-deftest ruby-debug-test--get-and-remove-full-chunk ()
+  (setq ruby-debug--output-since-last-command "bob")
+  (should (not (ruby-debug--get-and-remove-full-chunk)))
+
+  (setq ruby-debug--output-since-last-command "bob(byebug) sam Completed 200 Cracker")
+  (should (string= (ruby-debug--get-and-remove-full-chunk) "bob(byebug)"))
+  (should (string= ruby-debug--output-since-last-command "sam Completed 200 Cracker"))
+  (should (string= (ruby-debug--get-and-remove-full-chunk) "sam Completed 200"))
+  (should (string= ruby-debug--output-since-last-command "Cracker")))
+
 (ert-deftest ruby-debug-test--is-debug-over ()
   (should (not (ruby-debug--is-debug-over test-doc)))
   (should (ruby-debug--is-debug-over test-end-doc)))
@@ -99,6 +110,19 @@ bang
      (ruby-debug-test--step-into-first-file)
      (ruby-debug--show-instance-variables-activate)
      (ruby-debug--next-line)
+     (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--instance-variable-window)
+     (wait-for (string= (ruby-debug-test--buffer-contents-no-properties) "@integer = 3 ")))))
+
+(ert-deftest ruby-debug-test--instance-window-and-locals ()
+  (fixture
+   (lambda ()
+     (ruby-debug-test--step-into-first-file)
+     (ruby-debug--show-local-variables-activate)
+     (ruby-debug--show-instance-variables-activate)
+     (ruby-debug--next-line)
+     (sit-for 1)
+     (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--local-variable-window)
+     (wait-for (string-starts-with (ruby-debug-test--buffer-contents-no-properties) "integer = 3\nself = #<TestClass:"))
      (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--instance-variable-window)
      (wait-for (string= (ruby-debug-test--buffer-contents-no-properties) "@integer = 3 ")))))
 
@@ -173,6 +197,11 @@ bang
        (accept-process-output nil 0.05))
      ,@body))
 
+(defun string-starts-with (s begins)
+  "Return non-nil if string S starts with BEGINS."
+  (cond ((>= (length s) (length begins))
+         (string-equal (substring s 0 (length begins)) begins))
+        (t nil)))
 
 ;; Local Variables:
 ;; nameless-current-name: "ruby-debug-test"
