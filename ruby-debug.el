@@ -92,7 +92,14 @@
 
       (when (ruby-debug--is-complete-output-chunk chunk)
         (ruby-debug--process-output chunk)
+        ;;(ruby-debug--debug-chunks chunk)
         (set-buffer ruby-debug--process-name)))))
+
+(defun ruby-debug--debug-chunks (chunk)
+  (set-buffer "chunk-output")
+  (insert "Chunk:\n")
+  (insert chunk)
+  (insert "\n\n"))
 
 (defun ruby-debug--has-full-chunk ()
   (string-match "\\(\\(.\\|\n\\)*?\\)\\((byebug)\\|Completed [0-9]+\\)" ruby-debug--output-since-last-command))
