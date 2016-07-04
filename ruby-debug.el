@@ -34,15 +34,14 @@
 (defvar ruby-debug--is-evalling nil)
 
 (defvar ruby-debug--local-variable-window "*Ruby Debug Local*")
-(defvar ruby-debug--is-showing-locals nil)
 (defvar ruby-debug--is-locals-window-open nil)
 
 (defvar ruby-debug--instance-variable-window "*Ruby Debug Instance*")
-(defvar ruby-debug--is-showing-instance nil)
 (defvar ruby-debug--is-instance-window-open nil)
 
 (defvar ruby-debug--output-since-last-command "")
 (defvar ruby-debug--process-name "server")
+(defvar ruby-debug--command-queue '("next"))
 
 (define-minor-mode ruby-debug-mode
   "Get your foos in the right places."
@@ -116,6 +115,11 @@
   "Change the fringe to reflect the currently debugged LINE."
   (ruby-debug--add-fringe-at-line 'ruby-debug--current-line line))
 
+(defun ruby-debug--run-command-and-record (cmd)
+  "Run a byebug CMD in the server and record it."
+  (setq ruby-debug--command-queue (cons cmd ruby-debug--command-queue))
+  (ruby-debug--run-command cmd))
+
 (defun ruby-debug--run-command (cmd)
   "Run a byebug CMD in the server."
   (comint-simple-send (get-buffer-process ruby-debug--process-name) cmd))
@@ -153,39 +157,37 @@
 
 (defun ruby-debug--show-local-variables ()
   "Show local variables."
-  (setq ruby-debug--is-showing-locals t)
-  (ruby-debug--run-command "var local"))
+  (ruby-debug--run-command-and-record "var local"))
 
 (defun ruby-debug--show-instance-variables ()
   "Show instance variables."
-  (setq ruby-debug--is-showing-instance t)
-  (ruby-debug--run-command "var instance"))
+  (ruby-debug--run-command-and-record "var instance"))
 
 (defun ruby-debug--next-line ()
   "Step over."
   (interactive)
-  (ruby-debug--run-command "next"))
+  (ruby-debug--run-command-and-record "next"))
 
 (defun ruby-debug--step ()
   "Step into."
   (interactive)
-  (ruby-debug--run-command "step"))
+  (ruby-debug--run-command-and-record "step"))
 
 (defun ruby-debug--up ()
   "Up a frame."
   (interactive)
-  (ruby-debug--run-command "up"))
+  (ruby-debug--run-command-and-record "up"))
 
 (defun ruby-debug--down ()
   "Down a frame."
   (interactive)
-  (ruby-debug--run-command "down"))
+  (ruby-debug--run-command-and-record "down"))
 
 (defun ruby-debug--eval ()
   "Eval some code."
   (interactive)
   (setq ruby-debug--is-evalling t)
-  (ruby-debug--run-command (concat "eval " (ruby-debug--eval-prompt))))
+  (ruby-debug--run-command-and-record (concat "eval " (ruby-debug--eval-prompt))))
 
 (defun ruby-debug--eval-prompt ()
   "Get the string to eval."
@@ -197,19 +199,19 @@
 (defun ruby-debug--remove-all-breakpoints ()
   "Remove all the breakpoints."
   (interactive)
-  (ruby-debug--run-command "delete")
+  (ruby-debug--run-command-and-record "delete")
   (ruby-debug--run-command "y"))
 
 (defun ruby-debug--continue ()
   "Continue."
   (interactive)
-  (ruby-debug--run-command "continue"))
+  (ruby-debug--run-command-and-record "continue"))
 
 (defun ruby-debug--jump ()
   "Jump to current line."
   (interactive)
   (ruby-debug--add-breakpoint-at-current-line)
-  (ruby-debug--run-command "continue"))
+  (ruby-debug--run-command-and-record "continue"))
 
 (defun ruby-debug--breakpoint ()
   "Add breakpoint on the current line."
@@ -225,7 +227,7 @@
 
 (defun ruby-debug--add-breakpoint-at-current-line ()
   "Add breakpoint on the current line."
-  (ruby-debug--run-command (concat "b " (number-to-string (line-number-at-pos)))))
+  (ruby-debug--run-command-and-record (concat "b " (number-to-string (line-number-at-pos)))))
 
 (defun ruby-debug--get-marker-at-beginning-of-line (line)
   "Add a marker at LINE."
@@ -283,17 +285,22 @@
 
 (defun ruby-debug--process-output (output)
   "Process a completed chunk of server OUTPUT."
-  (if ruby-debug--is-evalling
-      (ruby-debug--print-and-reset-eval output))
+  (let ((command (car (last ruby-debug--command-queue))))
+    (setq ruby-debug--command-queue (butlast ruby-debug--command-queue))
 
-  (if (and ruby-debug--is-showing-locals (string-match "^\[^@\]" output))
-      (ruby-debug--print-and-reset-vars output ruby-debug--local-variable-window 'ruby-debug--is-showing-locals #'ruby-debug--is-window-locals-showing))
+    (ruby-debug--debug-chunks (concat command "\n" output))
+    
+    (if ruby-debug--is-evalling
+        (ruby-debug--print-and-reset-eval output))
 
-  (if (and ruby-debug--is-showing-instance (string-match "^@" output))
-      (ruby-debug--print-and-reset-vars output ruby-debug--instance-variable-window 'ruby-debug--is-showing-instance #'ruby-debug--is-window-instance-showing))
+    (if (string= command "var local")
+        (ruby-debug--print-and-reset-vars output ruby-debug--local-variable-window #'ruby-debug--is-window-locals-showing))
 
-  (if (ruby-debug--was-movement-command output)
-      (ruby-debug--goto-debugged-line output)))
+    (if (string= command "var instance")
+        (ruby-debug--print-and-reset-vars output ruby-debug--instance-variable-window #'ruby-debug--is-window-instance-showing))
+
+    (if (ruby-debug--was-movement-command output)
+        (ruby-debug--goto-debugged-line output))))
 
 (defun ruby-debug--was-movement-command (output)
   (and (ruby-debug--get-current-line-from-output output) (ruby-debug--get-current-file-from-output output)))
@@ -303,11 +310,9 @@
   (setq ruby-debug--is-evalling nil)
   (message (ruby-debug--clean-output output)))
 
-(defun ruby-debug--print-and-reset-vars (output var-window is-showing is-window-showing)
+(defun ruby-debug--print-and-reset-vars (output var-window is-window-showing)
   "OUTPUT VAR-WINDOW IS-SHOWING IS-WINDOW-SHOWING."
   (let ((vars (ruby-debug--clean-output output)))
-    (set is-showing nil)
-
     (ruby-debug--create-debug-window-if-none-existant var-window)
     (ruby-debug--show-debug-window-if-not-showing vars var-window is-window-showing)
     (ruby-debug--insert-output-into-debug-window vars var-window)
@@ -400,6 +405,7 @@
   (setq ruby-debug--opened-buffers nil)
   (ruby-debug--close-window ruby-debug--instance-variable-window 'ruby-debug--is-instance-window-open)
   (ruby-debug--close-window ruby-debug--local-variable-window 'ruby-debug--is-locals-window-open)
+  (setq ruby-debug--command-queue '("next"))
   (setq ruby-debug--is-in-debug-session nil))
 
 (defun ruby-debug--goto-line (num)

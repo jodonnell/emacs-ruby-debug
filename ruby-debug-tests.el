@@ -77,8 +77,7 @@ bang
 
 (ert-deftest ruby-debug-test--is-complete-output-chunk ()
   (should (not (ruby-debug--is-complete-output-chunk test-doc)))
-  (should (ruby-debug--is-complete-output-chunk (concat test-doc "\n(byebug)")))
-  (should (ruby-debug--is-complete-output-chunk test-end-doc)))
+  (should (ruby-debug--is-complete-output-chunk (concat test-doc "\n(byebug)"))))
 
 (ert-deftest ruby-debug-test--file-open ()
   (fixture
@@ -102,7 +101,7 @@ bang
    (lambda ()
      (ruby-debug--show-local-variables-activate)
      (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--local-variable-window)
-     (should (string= (ruby-debug-test--buffer-contents-no-properties) "apple = 3\nobj = nil ")))))
+     (should (string= (ruby-debug-test--buffer-contents-no-properties) "apple = 3\nobj = nil")))))
 
 (ert-deftest ruby-debug-test--instance-window ()
   (fixture
@@ -111,7 +110,7 @@ bang
      (ruby-debug--show-instance-variables-activate)
      (ruby-debug--next-line)
      (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--instance-variable-window)
-     (wait-for (string= (ruby-debug-test--buffer-contents-no-properties) "@integer = 3 ")))))
+     (wait-for (string= (ruby-debug-test--buffer-contents-no-properties) "@integer = 3")))))
 
 (ert-deftest ruby-debug-test--instance-window-and-locals ()
   (fixture
@@ -120,11 +119,10 @@ bang
      (ruby-debug--show-local-variables-activate)
      (ruby-debug--show-instance-variables-activate)
      (ruby-debug--next-line)
-     (sit-for 1)
      (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--local-variable-window)
      (wait-for (string-starts-with (ruby-debug-test--buffer-contents-no-properties) "integer = 3\nself = #<TestClass:"))
      (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--instance-variable-window)
-     (wait-for (string= (ruby-debug-test--buffer-contents-no-properties) "@integer = 3 ")))))
+     (wait-for (string= (ruby-debug-test--buffer-contents-no-properties) "@integer = 3")))))
 
  (ert-deftest ruby-debug-test--ends-at-end-of-output ()
    (fixture
