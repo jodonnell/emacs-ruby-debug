@@ -78,10 +78,6 @@
   "The process filter on the servers buffer, gives OUTPUT."
   (when (string= ruby-debug--process-name (buffer-name))
     (setq ruby-debug--output-since-last-command (concat ruby-debug--output-since-last-command output))
-
-    (if (not ruby-debug--is-in-debug-session)
-        (ruby-debug--begin-debug-session))
-
     (ruby-debug--process-output-while-full-chunk-exists)))
 
 (defun ruby-debug--process-output-while-full-chunk-exists ()
@@ -357,6 +353,8 @@
 (defun ruby-debug--goto-debugged-line (output)
   "Go to the debugged line found in OUTPUT."
   (ruby-debug--clear-current-line-fringe)
+  (if (not ruby-debug--is-in-debug-session)
+      (ruby-debug--begin-debug-session))
 
   (let ((current-line (ruby-debug--get-current-line-from-output output))
         (filename (ruby-debug--get-current-file-from-output output)))
