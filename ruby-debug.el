@@ -99,7 +99,7 @@
   (insert "\n\n"))
 
 (defun ruby-debug--has-full-chunk ()
-  (string-match "\\(\\(.\\|\n\\)*?\\)\\((byebug)\\|Completed [0-9]+\\)" ruby-debug--output-since-last-command))
+  (string-match "^[\0-\377[:nonascii:]]*?\\((byebug)\\|Completed [0-9]+\\)" ruby-debug--output-since-last-command))
 
 (defun ruby-debug--get-and-remove-full-chunk ()
   (if (ruby-debug--has-full-chunk)
