@@ -120,7 +120,7 @@ bang
      (ruby-debug--show-instance-variables-activate)
      (ruby-debug--next-line)
      (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--local-variable-window)
-     (wait-for (string-starts-with (ruby-debug-test--buffer-contents-no-properties) "integer = 3\nself = #<TestClass:"))
+     (wait-for (ruby-debug--string-starts-with (ruby-debug-test--buffer-contents-no-properties) "integer = 3\nself = #<TestClass:"))
      (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--instance-variable-window)
      (wait-for (string= (ruby-debug-test--buffer-contents-no-properties) "@integer = 3")))))
 
@@ -194,12 +194,6 @@ bang
      (while (not (funcall ,predicate))
        (accept-process-output nil 0.05))
      ,@body))
-
-(defun string-starts-with (s begins)
-  "Return non-nil if string S starts with BEGINS."
-  (cond ((>= (length s) (length begins))
-         (string-equal (substring s 0 (length begins)) begins))
-        (t nil)))
 
 ;; Local Variables:
 ;; nameless-current-name: "ruby-debug-test"

@@ -31,8 +31,6 @@
 (defvar ruby-debug--opened-buffers nil)
 (defvar ruby-debug--is-in-debug-session nil)
 
-(defvar ruby-debug--is-evalling nil)
-
 (defvar ruby-debug--local-variable-window "*Ruby Debug Local*")
 (defvar ruby-debug--is-locals-window-open nil)
 
@@ -186,7 +184,6 @@
 (defun ruby-debug--eval ()
   "Eval some code."
   (interactive)
-  (setq ruby-debug--is-evalling t)
   (ruby-debug--run-command-and-record (concat "eval " (ruby-debug--eval-prompt))))
 
 (defun ruby-debug--eval-prompt ()
@@ -290,7 +287,7 @@
 
     (ruby-debug--debug-chunks (concat command "\n" output))
     
-    (if ruby-debug--is-evalling
+    (if (ruby-debug--string-starts-with command "eval ")
         (ruby-debug--print-and-reset-eval output))
 
     (if (string= command "var local")
@@ -302,12 +299,17 @@
     (if (ruby-debug--was-movement-command output)
         (ruby-debug--goto-debugged-line output))))
 
+(defun ruby-debug--string-starts-with (s begins)
+  "Return non-nil if string S starts with BEGINS."
+  (cond ((>= (length s) (length begins))
+         (string-equal (substring s 0 (length begins)) begins))
+        (t nil)))
+
 (defun ruby-debug--was-movement-command (output)
   (and (ruby-debug--get-current-line-from-output output) (ruby-debug--get-current-file-from-output output)))
 
 (defun ruby-debug--print-and-reset-eval (output)
   "Prints the eval OUTPUT and then turns off eval mode."
-  (setq ruby-debug--is-evalling nil)
   (message (ruby-debug--clean-output output)))
 
 (defun ruby-debug--print-and-reset-vars (output var-window is-window-showing)
