@@ -285,8 +285,8 @@
   (let ((command (car (last ruby-debug--command-queue))))
     (setq ruby-debug--command-queue (butlast ruby-debug--command-queue))
 
-    (ruby-debug--debug-chunks (concat command "\n" output))
-    
+    ;;(ruby-debug--debug-chunks (concat command "\n" output))
+
     (if (ruby-debug--string-starts-with command "eval ")
         (ruby-debug--print-and-reset-eval output))
 
