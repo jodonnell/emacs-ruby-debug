@@ -105,7 +105,7 @@
   (if (ruby-debug--has-full-chunk)
       (progn
         (let ((matched-chunk (match-string 0 ruby-debug--output-since-last-command)))
-          (setq ruby-debug--output-since-last-command (string-trim-left (substring ruby-debug--output-since-last-command (length matched-chunk))))
+          (setq ruby-debug--output-since-last-command (s-trim-left (substring ruby-debug--output-since-last-command (length matched-chunk))))
           matched-chunk))
     nil))
 
@@ -270,7 +270,7 @@
 (defun ruby-debug--get-current-file-from-output (output)
   "Get the current file from OUTPUT."
   (if (string-match "\n\[[0-9]+, [0-9]+\] in \\(.*\\)" output)
-      (string-trim-right (match-string 1 output))))
+      (s-trim-right (match-string 1 output))))
 
 (defun ruby-debug--is-debug-over (output)
   "Look for a server finished request message from OUTPUT."
