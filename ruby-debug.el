@@ -313,12 +313,11 @@
   (message (ruby-debug--clean-output output)))
 
 (defun ruby-debug--print-and-reset-vars (output var-window is-window-showing)
-  "OUTPUT VAR-WINDOW IS-SHOWING IS-WINDOW-SHOWING."
+  "OUTPUT VAR-WINDOW IS-WINDOW-SHOWING."
   (let ((vars (ruby-debug--clean-output output)))
     (ruby-debug--create-debug-window-if-none-existant var-window)
     (ruby-debug--show-debug-window-if-not-showing vars var-window is-window-showing)
-    (ruby-debug--insert-output-into-debug-window vars var-window)
-    ))
+    (ruby-debug--insert-output-into-debug-window vars var-window)))
 
 (defun ruby-debug--clean-output (output)
   (ruby-debug--remove-string-from-string "var \\(local\\|instance\\)\n" (ruby-debug--remove-string-from-string "eval .*\n" (ruby-debug--remove-string-from-string "\n(byebug)" (ruby-debug--remove-string-from-string "" output)))))
