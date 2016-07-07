@@ -3,6 +3,7 @@
 ;; Author: Jacob O'Donnell
 ;; Version: 1.0
 ;; URL: http://github.com/jodonnell/emacs-ruby-debug
+;; Package-Requires: ((s "1.4"))
 ;; Compatibility: GNU Emacs 24.x
 
 ;; Copyright (C) 2016 Free Software Foundation, Inc
@@ -28,6 +29,8 @@
 
 ;;; Code:
 
+(require 's)
+
 (defvar ruby-debug--opened-buffers nil)
 (defvar ruby-debug--is-in-debug-session nil)
 
@@ -44,18 +47,16 @@
 
 (setq ruby-debug--command-prompt-regex "Jacobs-MacBook-Pro")
 
+;;;###autoload
 (define-minor-mode ruby-debug-mode
   "Get your foos in the right places."
   :lighter " ruby-debug"
-
   (if (bound-and-true-p ruby-debug-mode)
       (progn
         (add-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
         (setq ruby-debug--process-name (buffer-name)))
     (remove-hook 'comint-output-filter-functions 'ruby-debug--process-filter))
-
   (ruby-debug--clear-overlay-arrows))
-
 
 (define-minor-mode ruby-debug-control-mode
   "Get your foos in the right places."
@@ -428,5 +429,7 @@
 
 ;(add-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
 ;(remove-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
+
+(provide 'ruby-debug)
 
 ;;; ruby-debug.el ends here
