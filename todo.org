@@ -1,0 +1,15 @@
+* TODO
+** bugs
+*** multiple byebugs running at once - this causes issues with testing so probably should fix (have two buffers with ruby-debug enabled)
+*** user changing buffer name of process-name will break things
+*** fix fringes - currently will wipe out any fringes, should keep track of what this program has changed and only erase those
+*** things can get interleaved in output, such as SQL
+*** debug windows should resize as the output changes
+** ideas
+*** keep breakpoints from run to run?
+*** remove breakpoint command
+*** keep SQL window
+** refactorings
+*** isolate ruby-debug--output-since-last-command variable
+		this global variable is only used in ruby-debug--process-filter
+
