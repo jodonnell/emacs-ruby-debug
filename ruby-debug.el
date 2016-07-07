@@ -40,6 +40,9 @@
 (defvar ruby-debug--output-since-last-command "")
 (defvar ruby-debug--process-name "server")
 (defvar ruby-debug--command-queue '("next"))
+(defvar ruby-debug--command-prompt-regex "hopefully this never matches a prompt")
+
+(setq ruby-debug--command-prompt-regex "Jacobs-MacBook-Pro")
 
 (define-minor-mode ruby-debug-mode
   "Get your foos in the right places."
@@ -84,7 +87,7 @@
   (while (ruby-debug--has-full-chunk)
     (let ((chunk (ruby-debug--get-and-remove-full-chunk)))
 
-      (when (ruby-debug--is-debug-over chunk)
+      (when (and (ruby-debug--is-debug-over chunk) ruby-debug--is-in-debug-session)
         (ruby-debug--finish-debug))
 
       (when (ruby-debug--is-complete-output-chunk chunk)
@@ -99,7 +102,8 @@
   (insert "\n\n"))
 
 (defun ruby-debug--has-full-chunk ()
-  (string-match "^[\0-\377[:nonascii:]]*?\\((byebug)\\|Completed [0-9]+\\)" ruby-debug--output-since-last-command))
+  (string-match (concat "^[\0-\377[:nonascii:]]*?\\((byebug)\\|Completed [0-9]+\\|" ruby-debug--command-prompt-regex "\\)") ruby-debug--output-since-last-command))
+
 
 (defun ruby-debug--get-and-remove-full-chunk ()
   (if (ruby-debug--has-full-chunk)
@@ -274,7 +278,8 @@
 
 (defun ruby-debug--is-debug-over (output)
   "Look for a server finished request message from OUTPUT."
-  (string-match "Completed [0-9]+" output))
+  (or (string-match "Completed [0-9]+" output)
+      (string-match ruby-debug--command-prompt-regex output)))
 
 (defun ruby-debug--is-complete-output-chunk (output)
   "Check to see if the output check is done from OUTPUT."
