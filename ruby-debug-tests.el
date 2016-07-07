@@ -84,31 +84,31 @@ bang
   (should (ruby-debug--is-complete-output-chunk (concat test-doc "\n(byebug)"))))
 
 (ert-deftest ruby-debug-test--file-open ()
-  (fixture
+  (fixture "test.rb"
    (lambda ()
      (should (string= (what-line) "Line 8")))))
 
 (ert-deftest ruby-debug-test--next-line ()
-  (fixture
+  (fixture "test.rb"
    (lambda ()
      (ruby-debug--next-line)
      (wait-for (string= (what-line) "Line 8")))))
 
 (ert-deftest ruby-debug-test--step-into ()
-  (fixture
+  (fixture "test.rb"
    (lambda ()
      (ruby-debug-test--step-into-first-file)
      (should (string= (what-line) "Line 3")))))
 
 (ert-deftest ruby-debug-test--locals-window ()
-  (fixture
+  (fixture "test.rb"
    (lambda ()
      (ruby-debug--show-local-variables-activate)
      (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--local-variable-window)
      (should (string= (ruby-debug-test--buffer-contents-no-properties) "apple = 3\nobj = nil")))))
 
 (ert-deftest ruby-debug-test--instance-window ()
-  (fixture
+  (fixture "test.rb"
    (lambda ()
      (ruby-debug-test--step-into-first-file)
      (ruby-debug--show-instance-variables-activate)
@@ -117,7 +117,7 @@ bang
      (wait-for (string= (ruby-debug-test--buffer-contents-no-properties) "@integer = 3")))))
 
 (ert-deftest ruby-debug-test--instance-window-and-locals ()
-  (fixture
+  (fixture "test.rb"
    (lambda ()
      (ruby-debug-test--step-into-first-file)
      (ruby-debug--show-local-variables-activate)
@@ -129,7 +129,7 @@ bang
      (wait-for (string= (ruby-debug-test--buffer-contents-no-properties) "@integer = 3")))))
 
  (ert-deftest ruby-debug-test--ends-at-end-of-output ()
-   (fixture
+   (fixture "test.rb"
     (lambda ()
       (ruby-debug-test--step-into-first-file)
       (ruby-debug--continue)
@@ -139,6 +139,15 @@ bang
       ;; test closes windows
       (should (eq nil overlay-arrow-variable-list)))))
 
+ (ert-deftest ruby-debug-test--debug-window-grows-as-needed ()
+   (fixture "test_growing_debug_window.rb"
+    (lambda ()
+      (ruby-debug--show-instance-variables-activate)
+      (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--instance-variable-window)
+      (should (eq 4 (window-size (get-buffer-window ruby-debug--instance-variable-window))))
+      (ruby-debug--next-line)
+      (sit-for 1.0)
+      (should (eq 5 (window-size (get-buffer-window ruby-debug--instance-variable-window)))))))
 
 (defun ruby-debug-test--wait-for-buffer-to-exist-and-set (buffer-name)
   (wait-for (get-buffer buffer-name))
@@ -157,11 +166,11 @@ bang
       (ruby-debug--step)
       (ruby-debug-test--wait-for-file-to-open "test_class.rb"))
 
-(defun fixture (body)
+(defun fixture (fixture-name body)
   (unwind-protect
       (progn
-        (ruby-debug-test--init)
-        (ruby-debug-test--wait-for-file-to-open "test.rb")
+        (ruby-debug-test--init fixture-name)
+        (ruby-debug-test--wait-for-file-to-open fixture-name)
         (sleep-for 0.05) ; needed to clear the deleting breakpoints
         (funcall body))
     (ruby-debug-test--cleanup)))
@@ -169,11 +178,11 @@ bang
 (defun ruby-debug-test--wait-for-debug-to-end ()
   (wait-for (eq nil ruby-debug--is-in-debug-session)))
 
-(defun ruby-debug-test--init ()
+(defun ruby-debug-test--init (fixture-name)
   (shell "test-ruby-debug-mode")
   (ruby-debug-mode)
   (comint-simple-send (get-buffer-process "test-ruby-debug-mode") "cd fixtures")
-  (ruby-debug--run-command "./test.rb"))
+  (ruby-debug--run-command (concat "./" fixture-name)))
 
 (defun ruby-debug-test--cleanup ()
   (set-buffer "test-ruby-debug-mode")

@@ -4,7 +4,6 @@
 *** user changing buffer name of process-name will break things
 *** fix fringes - currently will wipe out any fringes, should keep track of what this program has changed and only erase those
 *** things can get interleaved in output, such as SQL
-*** debug windows should resize as the output changes
 ** ideas
 *** keep breakpoints from run to run?
 *** remove breakpoint command

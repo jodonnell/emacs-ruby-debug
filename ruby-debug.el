@@ -332,26 +332,19 @@
 (defun ruby-debug--insert-output-into-debug-window (vars var-window)
   (with-current-buffer (get-buffer var-window)
     (erase-buffer)
-    (insert vars)))
+    (insert vars)
+    (fit-window-to-buffer (get-buffer-window var-window))))
 
 (defun ruby-debug--show-debug-window-if-not-showing (vars var-window is-window-showing)
   (if (not (funcall is-window-showing))
       (set-window-buffer
-       (split-window-below (ruby-debug--vars-window-size vars))
+       (split-window-below (window-min-size))
        (get-buffer var-window))))
 
 (defun ruby-debug--create-debug-window-if-none-existant (debug-window)
   (when (not (get-buffer debug-window))
     (with-current-buffer (get-buffer-create debug-window)
       (toggle-truncate-lines 1))))
-
-(defun ruby-debug--vars-window-size (output)
-  "Calculate the size of the new window based on size of OUTPUT."
-  (let ((number-of-lines (+ 2 (s-count-matches "\n" output))))
-    (* -1
-       (if (> number-of-lines (window-min-size))
-           number-of-lines
-         (window-min-size)))))
 
 (defun ruby-debug--goto-debugged-line (output)
   "Go to the debugged line found in OUTPUT."
