@@ -168,7 +168,7 @@ bang
 (defun ruby-debug-test--init ()
   (shell "test-ruby-debug-mode")
   (ruby-debug-mode)
-  (comint-simple-send (get-buffer-process "test-ruby-debug-mode") "cd .")
+  (comint-simple-send (get-buffer-process "test-ruby-debug-mode") "cd fixtures")
   (ruby-debug--run-command "./test.rb"))
 
 (defun ruby-debug-test--cleanup ()
