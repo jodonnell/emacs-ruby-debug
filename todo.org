@@ -12,4 +12,5 @@
 ** refactorings
 *** isolate ruby-debug--output-since-last-command variable
 		this global variable is only used in ruby-debug--process-filter
+*** (set-process-filter proc 'ruby-debug--process-filter) instead? of (add-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
 

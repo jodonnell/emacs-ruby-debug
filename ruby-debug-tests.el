@@ -74,6 +74,10 @@ bang
   (should (not (ruby-debug--is-debug-over test-doc)))
   (should (ruby-debug--is-debug-over test-end-doc)))
 
+(ert-deftest ruby-debug-test--is-debug-over-by-command-prompt ()
+  (let ((ruby-debug--command-prompt-regex "\\[Jacobs-MacBook-Pro "))
+    (should (ruby-debug--is-debug-over "\n[Jacobs-MacBook-Pro ~/programming/emacs-ruby-debug/fixtures] "))))
+
 
 (ert-deftest ruby-debug-test--is-complete-output-chunk ()
   (should (not (ruby-debug--is-complete-output-chunk test-doc)))

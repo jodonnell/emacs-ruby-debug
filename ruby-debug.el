@@ -50,7 +50,6 @@
 
   (if (bound-and-true-p ruby-debug-mode)
       (progn
-        ;; (set-process-filter proc 'ruby-debug--process-filter) instead?
         (add-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
         (setq ruby-debug--process-name (buffer-name)))
     (remove-hook 'comint-output-filter-functions 'ruby-debug--process-filter))
