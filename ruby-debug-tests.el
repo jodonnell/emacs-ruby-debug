@@ -1,3 +1,5 @@
+(require 'ruby-debug)
+
 (setq test-doc
 "
 [12, 21] in /Users/jacob/programming/movie_matchmaker/app/controllers/welcome_controller.rb
