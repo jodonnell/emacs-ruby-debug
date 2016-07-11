@@ -98,4 +98,29 @@
   "Add breakpoint on the current line."
   (ruby-debug--run-command-and-record (concat "b " (number-to-string (line-number-at-pos)))))
 
+(defun ruby-debug--show-local-variables-activate ()
+  "Show local variables."
+  (interactive)
+  (if ruby-debug--is-locals-window-open
+      (ruby-debug--close-locals-window)
+    (setq ruby-debug--is-locals-window-open t)
+    (ruby-debug--show-local-variables)))
+
+(defun ruby-debug--show-instance-variables-activate ()
+  "Show instance variables."
+  (interactive)
+  (if ruby-debug--is-instance-window-open
+      (ruby-debug--close-instance-window)
+    (setq ruby-debug--is-instance-window-open t)
+    (ruby-debug--show-instance-variables)))
+
+(defun ruby-debug--close-instance-window ()
+  "Close instance variables."
+  (ruby-debug--close-window ruby-debug--instance-variable-window 'ruby-debug--is-instance-window-open))
+
+(defun ruby-debug--close-locals-window ()
+  "Close local variables."
+  (ruby-debug--close-window ruby-debug--local-variable-window 'ruby-debug--is-locals-window-open))
+
+
 (provide 'ruby-debug-control)

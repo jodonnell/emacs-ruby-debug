@@ -31,6 +31,8 @@
 
 (require 's)
 (require 'ruby-debug-control)
+(require 'ruby-debug-process-filter)
+(require 'ruby-debug-process-chunk)
 
 (defvar ruby-debug--opened-buffers nil)
 (defvar ruby-debug--is-in-debug-session nil)
@@ -41,7 +43,6 @@
 (defvar ruby-debug--instance-variable-window "*Ruby Debug Instance*")
 (defvar ruby-debug--is-instance-window-open nil)
 
-(defvar ruby-debug--output-since-last-command "")
 (defvar ruby-debug--process-name "server")
 (defvar ruby-debug--command-queue '("next"))
 (defvar ruby-debug--command-prompt-regex "hopefully this never matches a prompt")
@@ -59,69 +60,15 @@
     (remove-hook 'comint-output-filter-functions 'ruby-debug--process-filter))
   (ruby-debug--clear-overlay-arrows))
 
-(defun ruby-debug--process-filter (output)
-  "The process filter on the servers buffer, gives OUTPUT."
-  (when (string= ruby-debug--process-name (buffer-name))
-    (setq ruby-debug--output-since-last-command (concat ruby-debug--output-since-last-command output))
-    (ruby-debug--process-output-while-full-chunk-exists)))
-
-(defun ruby-debug--process-output-while-full-chunk-exists ()
-  (while (ruby-debug--has-full-chunk)
-    (let ((chunk (ruby-debug--get-and-remove-full-chunk)))
-
-      (when (and (ruby-debug--is-debug-over chunk) ruby-debug--is-in-debug-session)
-        (ruby-debug--finish-debug))
-
-      (when (ruby-debug--is-complete-output-chunk chunk)
-        (ruby-debug--process-output chunk)
-        ;;(ruby-debug--debug-chunks chunk)
-        (set-buffer ruby-debug--process-name)))))
-
 (defun ruby-debug--debug-chunks (chunk)
   (set-buffer "chunk-output")
   (insert "Chunk:\n")
   (insert chunk)
   (insert "\n\n"))
 
-(defun ruby-debug--has-full-chunk ()
-  (string-match (concat "^[\0-\377[:nonascii:]]*?\\((byebug)\\|Completed [0-9]+\\|" ruby-debug--command-prompt-regex "\\)") ruby-debug--output-since-last-command))
-
-(defun ruby-debug--get-and-remove-full-chunk ()
-  (if (ruby-debug--has-full-chunk)
-      (progn
-        (let ((matched-chunk (match-string 0 ruby-debug--output-since-last-command)))
-          (setq ruby-debug--output-since-last-command (s-trim-left (substring ruby-debug--output-since-last-command (length matched-chunk))))
-          matched-chunk))
-    nil))
-
 (defun ruby-debug--move-fringe (line)
   "Change the fringe to reflect the currently debugged LINE."
   (ruby-debug--add-fringe-at-line 'ruby-debug--current-line line))
-
-
-(defun ruby-debug--show-local-variables-activate ()
-  "Show local variables."
-  (interactive)
-  (if ruby-debug--is-locals-window-open
-      (ruby-debug--close-locals-window)
-    (setq ruby-debug--is-locals-window-open t)
-    (ruby-debug--show-local-variables)))
-
-(defun ruby-debug--show-instance-variables-activate ()
-  "Show instance variables."
-  (interactive)
-  (if ruby-debug--is-instance-window-open
-      (ruby-debug--close-instance-window)
-    (setq ruby-debug--is-instance-window-open t)
-    (ruby-debug--show-instance-variables)))
-
-(defun ruby-debug--close-instance-window ()
-  "Close instance variables."
-  (ruby-debug--close-window ruby-debug--instance-variable-window 'ruby-debug--is-instance-window-open))
-
-(defun ruby-debug--close-locals-window ()
-  "Close local variables."
-  (ruby-debug--close-window ruby-debug--local-variable-window 'ruby-debug--is-locals-window-open))
 
 (defun ruby-debug--close-window (buffer-name is-open-var)
   "Close window named BUFFER-NAME and set the IS-OPEN-VAR to false."
@@ -175,43 +122,6 @@
   "Get the current file from OUTPUT."
   (if (string-match "\n\[[0-9]+, [0-9]+\] in \\(.*\\)" output)
       (s-trim-right (match-string 1 output))))
-
-(defun ruby-debug--is-debug-over (output)
-  "Look for a server finished request message from OUTPUT."
-  (or (string-match "Completed [0-9]+" output)
-      (string-match ruby-debug--command-prompt-regex output)))
-
-(defun ruby-debug--is-complete-output-chunk (output)
-  "Check to see if the output check is done from OUTPUT."
-  (string-match "(byebug)" output))
-
-(defun ruby-debug--process-output (output)
-  "Process a completed chunk of server OUTPUT."
-  (let ((command (car (last ruby-debug--command-queue))))
-    (setq ruby-debug--command-queue (butlast ruby-debug--command-queue))
-
-    ;;(ruby-debug--debug-chunks (concat command "\n" output))
-
-    (if (ruby-debug--string-starts-with command "eval ")
-        (ruby-debug--print-and-reset-eval output))
-
-    (if (string= command "var local")
-        (ruby-debug--print-and-reset-vars output ruby-debug--local-variable-window #'ruby-debug--is-window-locals-showing))
-
-    (if (string= command "var instance")
-        (ruby-debug--print-and-reset-vars output ruby-debug--instance-variable-window #'ruby-debug--is-window-instance-showing))
-
-    (if (ruby-debug--was-movement-command output)
-        (ruby-debug--goto-debugged-line output))))
-
-(defun ruby-debug--string-starts-with (s begins)
-  "Return non-nil if string S starts with BEGINS."
-  (cond ((>= (length s) (length begins))
-         (string-equal (substring s 0 (length begins)) begins))
-        (t nil)))
-
-(defun ruby-debug--was-movement-command (output)
-  (and (ruby-debug--get-current-line-from-output output) (ruby-debug--get-current-file-from-output output)))
 
 (defun ruby-debug--print-and-reset-eval (output)
   "Prints the eval OUTPUT and then turns off eval mode."

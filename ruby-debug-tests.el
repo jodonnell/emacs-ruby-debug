@@ -124,7 +124,7 @@ bang
      (ruby-debug--show-instance-variables-activate)
      (ruby-debug--next-line)
      (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--local-variable-window)
-     (wait-for (ruby-debug--string-starts-with (ruby-debug-test--buffer-contents-no-properties) "integer = 3\nself = #<TestClass:"))
+     (wait-for (s-starts-with? "integer = 3\nself = #<TestClass:" (ruby-debug-test--buffer-contents-no-properties)))
      (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--instance-variable-window)
      (wait-for (string= (ruby-debug-test--buffer-contents-no-properties) "@integer = 3")))))
 
