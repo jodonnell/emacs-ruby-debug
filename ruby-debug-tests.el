@@ -141,6 +141,17 @@ bang
       ;; test closes windows
       (should (eq nil overlay-arrow-variable-list)))))
 
+ (ert-deftest ruby-debug-test--breakpoints-work ()
+   (fixture "test.rb"
+    (lambda ()
+      (forward-line 2)
+      (ruby-debug--breakpoint)
+      (forward-line 2)
+      (ruby-debug--continue)
+      (ruby-debug--continue)
+      (ruby-debug-test--wait-for-debug-to-end)
+      (should (string= (what-line) "Line 10")))))
+
  (ert-deftest ruby-debug-test--debug-window-grows-as-needed ()
    (fixture "test_growing_debug_window.rb"
     (lambda ()
@@ -188,9 +199,11 @@ bang
 
 (defun ruby-debug-test--cleanup ()
   (set-buffer "test-ruby-debug-mode")
-  (ruby-debug--continue)
-  (ruby-debug-test--wait-for-debug-to-end)
-  (ruby-debug-mode)
+  (if ruby-debug--is-in-debug-session
+      (progn
+        (ruby-debug--continue)
+        (ruby-debug-test--wait-for-debug-to-end)
+        (ruby-debug-mode)))
   (kill-process (get-buffer-process ruby-debug--process-name))
   (set-process-query-on-exit-flag (get-buffer-process ruby-debug--process-name) nil)
   (kill-buffer "test-ruby-debug-mode"))
