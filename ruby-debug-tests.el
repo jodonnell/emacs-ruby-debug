@@ -160,6 +160,15 @@ bang
       (forward-line 2)
       (wait-for (string= (what-line) "Line 10")))))
 
+(ert-deftest ruby-debug-test--up-and-down ()
+   (fixture "test.rb"
+    (lambda ()
+      (ruby-debug-test--step-into-first-file)
+      (ruby-debug--up)
+      (ruby-debug-test--wait-for-file-to-open "test.rb")
+      (ruby-debug--down)
+      (ruby-debug-test--wait-for-file-to-open "test_class.rb"))))
+
  (ert-deftest ruby-debug-test--debug-window-grows-as-needed ()
    (fixture "test_growing_debug_window.rb"
     (lambda ()
