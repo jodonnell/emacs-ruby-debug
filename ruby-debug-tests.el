@@ -94,7 +94,7 @@ bang
   (fixture "test.rb"
    (lambda ()
      (ruby-debug--next-line)
-     (wait-for (string= (what-line) "Line 8")))))
+     (wait-for (string= (what-line) "Line 9")))))
 
 (ert-deftest ruby-debug-test--step-into ()
   (fixture "test.rb"
