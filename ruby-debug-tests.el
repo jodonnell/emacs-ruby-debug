@@ -152,6 +152,14 @@ bang
       (ruby-debug-test--wait-for-debug-to-end)
       (should (string= (what-line) "Line 10")))))
 
+(ert-deftest ruby-debug-test--jump-work ()
+   (fixture "test.rb"
+    (lambda ()
+      (forward-line 2)
+      (ruby-debug--jump)
+      (forward-line 2)
+      (wait-for (string= (what-line) "Line 10")))))
+
  (ert-deftest ruby-debug-test--debug-window-grows-as-needed ()
    (fixture "test_growing_debug_window.rb"
     (lambda ()
