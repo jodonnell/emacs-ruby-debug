@@ -159,8 +159,7 @@ bang
       (ruby-debug-test--wait-for-buffer-to-exist-and-set ruby-debug--instance-variable-window)
       (should (eq 4 (window-size (get-buffer-window ruby-debug--instance-variable-window))))
       (ruby-debug--next-line)
-      (sit-for 1.0)
-      (should (eq 5 (window-size (get-buffer-window ruby-debug--instance-variable-window)))))))
+      (wait-for (eq 5 (window-size (get-buffer-window ruby-debug--instance-variable-window)))))))
 
 (defun ruby-debug-test--wait-for-buffer-to-exist-and-set (buffer-name)
   (wait-for (get-buffer buffer-name))
