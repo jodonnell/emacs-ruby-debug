@@ -152,6 +152,16 @@ bang
       (ruby-debug-test--wait-for-debug-to-end)
       (should (string= (what-line) "Line 10")))))
 
+(ert-deftest ruby-debug-test--remove-all-breakpoints-work ()
+   (fixture "test.rb"
+    (lambda ()
+      (forward-line 2)
+      (ruby-debug--breakpoint)
+      (ruby-debug--remove-all-breakpoints)
+      (forward-line 2)
+      (ruby-debug--continue)
+      (ruby-debug-test--wait-for-debug-to-end))))
+
 (ert-deftest ruby-debug-test--jump-work ()
    (fixture "test.rb"
     (lambda ()
