@@ -85,6 +85,10 @@ bang
   (should (not (ruby-debug--is-complete-output-chunk test-doc)))
   (should (ruby-debug--is-complete-output-chunk (concat test-doc "\n(byebug)"))))
 
+(ert-deftest ruby-debug-test--wont-die-if-command-queue-is-off ()
+  (ruby-debug--process-command "chunk")
+  (ruby-debug--process-command "chunk"))
+
 (ert-deftest ruby-debug-test--file-open ()
   (fixture "test.rb"
    (lambda ()

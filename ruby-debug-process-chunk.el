@@ -12,19 +12,21 @@
   (let ((command (car (last ruby-debug--command-queue))))
     (setq ruby-debug--command-queue (butlast ruby-debug--command-queue))
 
-    ;;(ruby-debug--debug-chunks (concat command "\n" chunk))
+    (if command
+        (progn
+          ;;(ruby-debug--debug-chunks (concat command "\n" chunk))
 
-    (if (s-starts-with? "eval " command)
-        (ruby-debug--print-and-reset-eval chunk))
+          (if (s-starts-with? "eval " command)
+              (ruby-debug--print-and-reset-eval chunk))
 
-    (if (string= command "var local")
-        (ruby-debug--print-and-reset-vars chunk ruby-debug--local-variable-window #'ruby-debug--is-window-locals-showing))
+          (if (string= command "var local")
+              (ruby-debug--print-and-reset-vars chunk ruby-debug--local-variable-window #'ruby-debug--is-window-locals-showing))
 
-    (if (string= command "var instance")
-        (ruby-debug--print-and-reset-vars chunk ruby-debug--instance-variable-window #'ruby-debug--is-window-instance-showing))
+          (if (string= command "var instance")
+              (ruby-debug--print-and-reset-vars chunk ruby-debug--instance-variable-window #'ruby-debug--is-window-instance-showing))
 
-    (if (ruby-debug--was-movement-command chunk)
-        (ruby-debug--goto-debugged-line chunk))))
+          (if (ruby-debug--was-movement-command chunk)
+              (ruby-debug--goto-debugged-line chunk))))))
 
 (defun ruby-debug--was-movement-command (output)
   (and (ruby-debug--get-current-line-from-output output) (ruby-debug--get-current-file-from-output output)))
