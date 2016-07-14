@@ -50,7 +50,7 @@
 (defvar ruby-debug--command-queue '("next"))
 (defvar ruby-debug--command-prompt-regex "hopefully this never matches a prompt")
 
-(setq ruby-debug--command-prompt-regex "Jacobs-MBP")
+(setq ruby-debug--command-prompt-regex "\\[\\(Jacobs-MacBook-Pro \\)\\|\\(Jacobs-MBP\\)")
 
 ;;;###autoload
 (define-minor-mode ruby-debug-mode
@@ -58,10 +58,10 @@
   :lighter " ruby-debug"
   (if (bound-and-true-p ruby-debug-mode)
       (progn
+        (ruby-debug--finish-debug)
         (add-hook 'comint-output-filter-functions 'ruby-debug--process-filter)
         (setq ruby-debug--process-name (buffer-name)))
-    (remove-hook 'comint-output-filter-functions 'ruby-debug--process-filter))
-  (ruby-debug--clear-overlay-arrows))
+    (remove-hook 'comint-output-filter-functions 'ruby-debug--process-filter)))
 
 (defun ruby-debug--debug-chunks (chunk)
   (set-buffer "chunk-output")

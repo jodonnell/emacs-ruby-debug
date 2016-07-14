@@ -4,6 +4,7 @@
 *** user changing buffer name of process-name will break things
 *** fix fringes - currently will wipe out any fringes, should keep track of what this program has changed and only erase those
 *** things can get interleaved in output, such as SQL
+*** one of the tests debug-window-grows-as-needed requires the user to have set their command prompt variable
 ** ideas
 *** keep breakpoints from run to run?
 *** remove breakpoint command

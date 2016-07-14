@@ -77,9 +77,9 @@ bang
   (should (ruby-debug--is-debug-over test-end-doc)))
 
 (ert-deftest ruby-debug-test--is-debug-over-by-command-prompt ()
-  (let ((ruby-debug--command-prompt-regex "\\[Jacobs-MacBook-Pro "))
-    (should (ruby-debug--is-debug-over "\n[Jacobs-MacBook-Pro ~/programming/emacs-ruby-debug/fixtures] "))))
-
+  (let ((ruby-debug--command-prompt-regex "\\[\\(Jacobs-MacBook-Pro \\)\\|\\(Jacobs-MBP\\)"))
+    (should (ruby-debug--is-debug-over "\n[Jacobs-MacBook-Pro ~/programming/emacs-ruby-debug/fixtures] "))
+    (should (ruby-debug--is-debug-over "\n[Jacobs-MBP ~/programming/emacs-ruby-debug/fixtures] "))))
 
 (ert-deftest ruby-debug-test--is-complete-output-chunk ()
   (should (not (ruby-debug--is-complete-output-chunk test-doc)))
